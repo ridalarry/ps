@@ -38,24 +38,6 @@ public class ItemStackRemapper {
 		public void applyDefaultRemaps() {
 			remappings.clear();
 			//modified copy of blocks remapper adapted to items
-			registerRemapEntry(Material.CONCRETE, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
-			registerRemapEntry(Material.CONCRETE_POWDER, Material.WOOL, ProtocolVersionsHelper.BEFORE_1_12);
-			registerRemapEntry(Material.WHITE_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
-			registerRemapEntry(Material.ORANGE_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
-			registerRemapEntry(Material.MAGENTA_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
-			registerRemapEntry(Material.LIGHT_BLUE_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
-			registerRemapEntry(Material.YELLOW_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
-			registerRemapEntry(Material.LIME_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
-			registerRemapEntry(Material.PINK_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
-			registerRemapEntry(Material.GRAY_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
-			registerRemapEntry(Material.SILVER_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
-			registerRemapEntry(Material.CYAN_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
-			registerRemapEntry(Material.PURPLE_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
-			registerRemapEntry(Material.BLUE_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
-			registerRemapEntry(Material.BROWN_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
-			registerRemapEntry(Material.GREEN_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
-			registerRemapEntry(Material.RED_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
-			registerRemapEntry(Material.BLACK_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
 			registerRemapEntry(Material.IRON_NUGGET, Material.GOLD_NUGGET, ProtocolVersionsHelper.BEFORE_1_11_1);
 			registerRemapEntry(Material.OBSERVER, Material.FURNACE, ProtocolVersionsHelper.BEFORE_1_11);
 			registerRemapEntry(Material.WHITE_SHULKER_BOX, Material.FURNACE, ProtocolVersionsHelper.BEFORE_1_11);
@@ -153,7 +135,6 @@ public class ItemStackRemapper {
 			registerRemapEntry(Material.REDSTONE_COMPARATOR_ON, Material.DIODE_BLOCK_ON, ProtocolVersionsHelper.BEFORE_1_5);
 			//items remap
 			registerRemapEntry(Material.BED, Material.BED, 0, ProtocolVersionsHelper.BEFORE_1_12);
-			registerRemapEntry(Material.KNOWLEDGE_BOOK, Material.BOOK, ProtocolVersionsHelper.BEFORE_1_12);
 			registerRemapEntry(Material.SHULKER_SHELL, Material.COBBLESTONE, ProtocolVersionsHelper.BEFORE_1_11);
 			registerRemapEntry(Material.TOTEM, Material.COBBLESTONE, ProtocolVersionsHelper.BEFORE_1_11);
 			registerRemapEntry(Material.BEETROOT, Material.BROWN_MUSHROOM, ProtocolVersionsHelper.BEFORE_1_9);

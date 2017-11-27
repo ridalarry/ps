@@ -20,7 +20,6 @@ public class SpigotLoginListener extends AbstractLoginListener implements ITicka
 		super(networkmanager, hostname);
 	}
 
-	@Override
 	public void e() {
 		tick();
 	}
@@ -52,6 +51,12 @@ public class SpigotLoginListener extends AbstractLoginListener implements ITicka
 	@Override
 	protected SpigotLoginListenerPlay getLoginListenerPlay() {
 		return new SpigotLoginListenerPlay(networkManager, profile, isOnlineMode, hostname);
+	}
+
+	@Override
+	public void F_() {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

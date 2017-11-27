@@ -2,7 +2,6 @@ package protocolsupport.protocol.packet.middleimpl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.util.Recycler;
-import io.netty.util.Recycler.Handle;
 import protocolsupport.protocol.packet.ServerBoundPacket;
 import protocolsupport.utils.netty.Allocator;
 import protocolsupport.utils.netty.WrappingBuffer;
@@ -10,21 +9,21 @@ import protocolsupport.utils.recyclable.Recyclable;
 
 public class ServerBoundPacketData extends WrappingBuffer implements Recyclable {
 
-	private static final Recycler<ServerBoundPacketData> recycler = new Recycler<ServerBoundPacketData>() {
+	private static final Recycler<ServerBoundPacketData> RECYCLER = new Recycler<ServerBoundPacketData>() {
 		@Override
-		protected ServerBoundPacketData newObject(Handle<ServerBoundPacketData> handle) {
+		protected ServerBoundPacketData newObject(Recycler.Handle handle) {
 			return new ServerBoundPacketData(handle);
 		}
 	};
 
 	public static ServerBoundPacketData create(ServerBoundPacket packet) {
-		ServerBoundPacketData packetdata = recycler.get();
+		ServerBoundPacketData packetdata = RECYCLER.get();
 		packetdata.packet = packet;
 		return packetdata;
 	}
 
-	private final Handle<ServerBoundPacketData> handle;
-	private ServerBoundPacketData(Handle<ServerBoundPacketData> handle) {
+	private final Recycler.Handle handle;
+	private ServerBoundPacketData(Recycler.Handle handle) {
 		super(Allocator.allocateUnpooledBuffer());
 		this.handle = handle;
 	}
@@ -52,7 +51,7 @@ public class ServerBoundPacketData extends WrappingBuffer implements Recyclable 
 	public void recycle() {
 		clear();
 		packet = null;
-		handle.recycle(this);
+		RECYCLER.recycle(this, handle);
 	}
 
 }

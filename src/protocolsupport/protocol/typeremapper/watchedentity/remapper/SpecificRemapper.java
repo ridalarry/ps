@@ -422,13 +422,6 @@ public enum SpecificRemapper {
 	EVOKER(NetworkEntityType.EVOKER, SpecificRemapper.INSENTIENT,
 		new Entry(new IndexValueRemapperNoOp<DataWatcherObjectByte>(DataWatcherObjectIndex.Evoker.SPELL, 12) {}, ProtocolVersionsHelper.RANGE__1_11__1_12_2)
 	),
-	ILLUSIONER(NetworkEntityType.ILLUSIONER, SpecificRemapper.EVOKER),
-	VEX(NetworkEntityType.VEX, SpecificRemapper.INSENTIENT,
-		new Entry(new IndexValueRemapperNoOp<DataWatcherObjectByte>(DataWatcherObjectIndex.Vex.FLAGS, 12) {}, ProtocolVersionsHelper.RANGE__1_11__1_12_2)
-	),
-	PARROT(NetworkEntityType.PARROT, SpecificRemapper.TAMEABLE,
-		new Entry(new IndexValueRemapperNoOp<DataWatcherObjectVarInt>(DataWatcherObjectIndex.Parrot.VARIANT, 15) {}, ProtocolVersionsHelper.ALL_1_12)
-	),
 	ARMOR_STAND_MOB(NetworkEntityType.ARMOR_STAND_MOB, SpecificRemapper.ARMOR_STAND),
 	BOAT(NetworkEntityType.BOAT,
 		new Entry(new IndexValueRemapperNoOp<DataWatcherObjectVarInt>(DataWatcherObjectIndex.Boat.TIME_SINCE_LAST_HIT, 6) {}, ProtocolVersionsHelper.RANGE__1_10__1_12_2),

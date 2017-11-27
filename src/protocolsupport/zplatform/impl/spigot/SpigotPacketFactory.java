@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.bukkit.Material;
-import org.bukkit.craftbukkit.v1_11_R1.entity.CraftEntity;
+import org.bukkit.entity.Entity;
 import org.spigotmc.SpigotConfig;
 
 import com.google.common.collect.BiMap;
@@ -44,7 +44,7 @@ public class SpigotPacketFactory implements PlatformPacketFactory {
 
 	@Override
 	public Object createOutboundChatPacket(String message, int position) {
-		return new PacketPlayOutChat(ChatSerializer.a(message), ChatMessageType.a((byte) position));
+		return new PacketPlayOutChat(ChatSerializer.a(message), (byte) position);
 	}
 
 	private static final BaseComponent empty = new TextComponent("");
@@ -160,11 +160,6 @@ public class SpigotPacketFactory implements PlatformPacketFactory {
 	@Override
 	public Object createFakeJoinGamePacket() {
 		return new PacketPlayOutLogin(0, EnumGamemode.NOT_SET, false, 0, EnumDifficulty.EASY, 60, WorldType.NORMAL, false);
-	}
-
-	@Override
-	public Object createEntityStatusPacket(org.bukkit.entity.Entity entity, int status) {
-		return new PacketPlayOutEntityStatus(((CraftEntity) entity).getHandle(), (byte) status);
 	}
 
 
@@ -578,26 +573,6 @@ public class SpigotPacketFactory implements PlatformPacketFactory {
 		return getOutId(PacketPlayOutVehicleMove.class);
 	}
 
-	@Override
-	public int getOutPlayUnlockRecipesPacketId() {
-		return getOutId(PacketPlayOutRecipes.class);
-	}
-
-	@Override
-	public int getOutPlayAdvancementsPacketId() {
-		return getOutId(PacketPlayOutAdvancements.class);
-	}
-
-	@Override
-	public int getOutPlayAdvancementsTabPacketId() {
-		return getOutId(PacketPlayOutSelectAdvancementTab.class);
-	}
-
-	@Override
-	public int getOutPlayCraftingGridConfirmPacketId() {
-		return getOutId(PacketPlayOutAutoRecipe.class);
-	}
-
 
 	@Override
 	public int getInHandshakeStartPacketId() {
@@ -774,21 +749,6 @@ public class SpigotPacketFactory implements PlatformPacketFactory {
 		return getInId(PacketPlayInTeleportAccept.class);
 	}
 
-	@Override
-	public int getInPlayCraftingBookPacketId() {
-		return getInId(PacketPlayInRecipeDisplayed.class);
-	}
-
-	@Override
-	public int getInPlayPrepareCraftingGridPacketId() {
-		return getInId(PacketPlayInAutoRecipe.class);
-	}
-
-	@Override
-	public int getInPlayAdvancementTabPacketId() {
-		return getInId(PacketPlayInAdvancements.class);
-	}
-
 
 	@SuppressWarnings("unchecked")
 	private static Map<EnumProtocolDirection, BiMap<Integer, Class<? extends Packet<?>>>> getPacketIdMap(Class<?> packetClass) {
@@ -812,6 +772,54 @@ public class SpigotPacketFactory implements PlatformPacketFactory {
 
 	private static final int getInId(Class<?> packetClass) {
 		return getPacketIdMap(packetClass).get(EnumProtocolDirection.SERVERBOUND).inverse().get(packetClass);
+	}
+
+	@Override
+	public Object createEntityStatusPacket(Entity entity, int status) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public int getOutPlayUnlockRecipesPacketId() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public int getOutPlayAdvancementsPacketId() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public int getOutPlayAdvancementsTabPacketId() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public int getOutPlayCraftingGridConfirmPacketId() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public int getInPlayCraftingBookPacketId() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public int getInPlayPrepareCraftingGridPacketId() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public int getInPlayAdvancementTabPacketId() {
+		// TODO Auto-generated method stub
+		return 0;
 	}
 
 }

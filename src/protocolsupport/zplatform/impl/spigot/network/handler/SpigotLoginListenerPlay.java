@@ -21,9 +21,7 @@ import net.minecraft.server.v1_11_R1.PacketLoginInEncryptionBegin;
 import net.minecraft.server.v1_11_R1.PacketLoginInListener;
 import net.minecraft.server.v1_11_R1.PacketLoginInStart;
 import net.minecraft.server.v1_11_R1.PacketPlayInAbilities;
-import net.minecraft.server.v1_11_R1.PacketPlayInAdvancements;
 import net.minecraft.server.v1_11_R1.PacketPlayInArmAnimation;
-import net.minecraft.server.v1_11_R1.PacketPlayInAutoRecipe;
 import net.minecraft.server.v1_11_R1.PacketPlayInBlockDig;
 import net.minecraft.server.v1_11_R1.PacketPlayInBlockPlace;
 import net.minecraft.server.v1_11_R1.PacketPlayInBoatMove;
@@ -36,7 +34,6 @@ import net.minecraft.server.v1_11_R1.PacketPlayInEntityAction;
 import net.minecraft.server.v1_11_R1.PacketPlayInFlying;
 import net.minecraft.server.v1_11_R1.PacketPlayInHeldItemSlot;
 import net.minecraft.server.v1_11_R1.PacketPlayInKeepAlive;
-import net.minecraft.server.v1_11_R1.PacketPlayInRecipeDisplayed;
 import net.minecraft.server.v1_11_R1.PacketPlayInResourcePackStatus;
 import net.minecraft.server.v1_11_R1.PacketPlayInSetCreativeSlot;
 import net.minecraft.server.v1_11_R1.PacketPlayInSettings;
@@ -65,7 +62,6 @@ public class SpigotLoginListenerPlay extends AbstractLoginListenerPlay implement
 		super(networkmanager, profile, onlineMode, hostname);
 	}
 
-	@Override
 	public void e() {
 		tick();
 	}
@@ -246,15 +242,10 @@ public class SpigotLoginListenerPlay extends AbstractLoginListenerPlay implement
 	}
 
 	@Override
-	public void a(PacketPlayInAutoRecipe p0) {
+	public void F_() {
+		// TODO Auto-generated method stub
+		
 	}
 
-	@Override
-	public void a(PacketPlayInRecipeDisplayed p0) {
-	}
-
-	@Override
-	public void a(PacketPlayInAdvancements arg0) {
-	}
 
 }
