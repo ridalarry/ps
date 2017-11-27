@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="lib" path="buildprocessor/BuildProcessor.jar"/>
+	<classpathentry kind="lib" path="gradle/plugins/shadowPlugin.jar"/>
+	<classpathentry kind="lib" path="gradle/wrapper/gradle-wrapper.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="F:/servers/Skyblock/spigot.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
