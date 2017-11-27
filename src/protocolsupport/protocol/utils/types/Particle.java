@@ -1,5 +1,7 @@
 package protocolsupport.protocol.utils.types;
 
+import protocolsupport.protocol.utils.EnumConstantLookups;
+
 public enum Particle {
 
 	EXPLOSION_NORMAL("explode"),
@@ -48,7 +50,9 @@ public enum Particle {
 	END_ROD("endRod"),
 	DAMAGE_INDICATOR("damageIndicator"),
 	SWEEP_ATTACK("sweepAttack"),
-	FALLING_DUST("fallingdust");
+	FALLING_DUST("fallingdust"),
+    TOTEM("totem"),
+    SPIT("spit");
 
 	private final String id;
 
@@ -64,8 +68,10 @@ public enum Particle {
 		return ordinal();
 	}
 
+	private static final EnumConstantLookups.EnumConstantLookup<Particle> lookup = new EnumConstantLookups.EnumConstantLookup<>(Particle.class);
+
 	public static Particle getById(int id) {
-		return Particle.values()[id];
+		return lookup.getByOrdinal(id);
 	}
 
 }

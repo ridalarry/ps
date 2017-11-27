@@ -9,6 +9,7 @@ import io.netty.channel.Channel;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import protocolsupport.api.events.PlayerPropertiesResolveEvent.ProfileProperty;
+import protocolsupport.api.utils.NetworkState;
 import protocolsupport.protocol.packet.handler.IHasProfile;
 import protocolsupport.protocol.utils.authlib.GameProfile;
 
@@ -35,6 +36,8 @@ public abstract class NetworkManagerWrapper {
 	public abstract void sendPacket(Object packet, GenericFutureListener<? extends Future<? super Void>> genericListener, @SuppressWarnings("unchecked") GenericFutureListener<? extends Future<? super Void>>... futureListeners);
 
 	public abstract void setProtocol(NetworkState state);
+
+	public abstract NetworkState getNetworkState();
 
 	public abstract Object getPacketListener();
 

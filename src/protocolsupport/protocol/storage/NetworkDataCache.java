@@ -6,26 +6,28 @@ import java.util.List;
 import java.util.UUID;
 
 import gnu.trove.map.hash.TIntObjectHashMap;
+import io.netty.util.internal.ThreadLocalRandom;
 import protocolsupport.api.chat.ChatAPI;
 import protocolsupport.api.events.PlayerPropertiesResolveEvent.ProfileProperty;
+import protocolsupport.protocol.utils.i18n.I18NData;
 import protocolsupport.protocol.utils.types.Environment;
 import protocolsupport.protocol.utils.types.NetworkEntity;
 import protocolsupport.protocol.utils.types.WindowType;
+import protocolsupport.utils.Utils;
 
 public class NetworkDataCache {
 
-	private static final double acceptableError = 0.001;
+	private static final double acceptableError = 0.1;
 
 	private double x;
 	private double y;
 	private double z;
 	private int teleportConfirmId;
 
-	public boolean isTeleportConfirmNeeded() {
-		return teleportConfirmId != -1;
-	}
-
 	public int tryTeleportConfirm(double x, double y, double z) {
+		if (teleportConfirmId == -1) {
+			return -1;
+		}
 		if (
 			(Math.abs(this.x - x) < acceptableError) &&
 			(Math.abs(this.y - y) < acceptableError) &&
@@ -36,14 +38,6 @@ public class NetworkDataCache {
 			return r;
 		}
 		return -1;
-	}
-
-	public boolean tryTeleportConfirm(int teleportId) {
-		if (teleportId == teleportConfirmId) {
-			teleportConfirmId = -1;
-			return true;
-		}
-		return false;
 	}
 
 	public void setTeleportLocation(double x, double y, double z, int teleportConfirmId) {
@@ -137,6 +131,11 @@ public class NetworkDataCache {
 		return maxHealth;
 	}
 
+	@Override
+	public String toString() {
+		return Utils.toStringAllFields(this);
+	}
+
 	public static class PropertiesStorage {
 		private final HashMap<String, ProfileProperty> signed = new HashMap<>();
 		private final HashMap<String, ProfileProperty> unsigned = new HashMap<>();
@@ -158,6 +157,11 @@ public class NetworkDataCache {
 				properties.addAll(unsigned.values());
 				return properties;
 			}
+		}
+
+		@Override
+		public String toString() {
+			return Utils.toStringAllFields(this);
 		}
 	}
 
@@ -182,8 +186,8 @@ public class NetworkDataCache {
 			return name;
 		}
 
-		public String getName() {
-			return displayNameJson == null ? name : ChatAPI.fromJSON(displayNameJson).toLegacyText();
+		public String getName(String locale) {
+			return displayNameJson == null ? name : ChatAPI.fromJSON(displayNameJson).toLegacyText(locale);
 		}
 
 		@Override
@@ -194,6 +198,47 @@ public class NetworkDataCache {
 				clone.propstorage.add(property);
 			}
 			return clone;
+		}
+
+		@Override
+		public String toString() {
+			return Utils.toStringAllFields(this);
+		}
+	}
+
+	protected String locale = I18NData.DEFAULT_LOCALE;
+
+	public void setLocale(String locale) {
+		this.locale = locale.toLowerCase();
+	}
+
+	public String getLocale() {
+		return locale;
+	}
+
+	protected long serverKeepAliveId = -1;
+	protected int clientKeepAliveId = -1;
+
+	private int getNextClientKeepAliveId() {
+		clientKeepAliveId++;
+		if (clientKeepAliveId < 1) {
+			clientKeepAliveId = (int) ((System.currentTimeMillis() % (60 * 1000)) << 4) + ThreadLocalRandom.current().nextInt(16) + 1;
+		}
+		return clientKeepAliveId;
+	}
+
+	public int storeServerKeepAliveId(long serverKeepAliveId) {
+		this.serverKeepAliveId = serverKeepAliveId;
+		return getNextClientKeepAliveId();
+	}
+
+	public long tryConfirmKeepAlive(int clientKeepAliveId) {
+		if (this.clientKeepAliveId == clientKeepAliveId) {
+			long cServerKeepAliveId = serverKeepAliveId;
+			serverKeepAliveId = -1;
+			return cServerKeepAliveId;
+		} else {
+			return -1;
 		}
 	}
 

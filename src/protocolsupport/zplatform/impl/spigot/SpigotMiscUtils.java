@@ -1,46 +1,57 @@
 package protocolsupport.zplatform.impl.spigot;
 
 import java.security.KeyPair;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
-import org.bukkit.Achievement;
 import org.bukkit.Bukkit;
-import org.bukkit.Statistic;
+import org.bukkit.Location;
 import org.bukkit.craftbukkit.v1_11_R1.CraftServer;
-import org.bukkit.craftbukkit.v1_11_R1.CraftStatistic;
+import org.bukkit.craftbukkit.v1_11_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_11_R1.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_11_R1.util.CraftIconCache;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.CachedServerIcon;
 import org.spigotmc.SpigotConfig;
 
+import com.google.common.base.Predicates;
+import com.google.common.collect.Lists;
 import com.mojang.authlib.properties.Property;
 
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
+import net.minecraft.server.v1_11_R1.AxisAlignedBB;
+import net.minecraft.server.v1_11_R1.EntityPlayer;
 import net.minecraft.server.v1_11_R1.EnumProtocol;
 import net.minecraft.server.v1_11_R1.MinecraftServer;
 import net.minecraft.server.v1_11_R1.NBTTagCompound;
-import net.minecraft.server.v1_11_R1.NetworkManager;
+import net.minecraft.server.v1_11_R1.WorldServer;
 import protocolsupport.api.events.PlayerPropertiesResolveEvent.ProfileProperty;
+import protocolsupport.api.utils.NetworkState;
+import protocolsupport.protocol.pipeline.ChannelHandlers;
 import protocolsupport.protocol.pipeline.IPacketPrepender;
 import protocolsupport.protocol.pipeline.IPacketSplitter;
+import protocolsupport.protocol.pipeline.common.PacketDecrypter;
+import protocolsupport.protocol.pipeline.common.PacketEncrypter;
+import protocolsupport.protocol.utils.MinecraftEncryption;
 import protocolsupport.protocol.utils.authlib.GameProfile;
 import protocolsupport.zplatform.PlatformUtils;
 import protocolsupport.zplatform.impl.spigot.itemstack.SpigotNBTTagCompoundWrapper;
 import protocolsupport.zplatform.impl.spigot.network.SpigotChannelHandlers;
-import protocolsupport.zplatform.impl.spigot.network.SpigotNetworkManagerWrapper;
+import protocolsupport.zplatform.impl.spigot.network.pipeline.SpigotPacketCompressor;
+import protocolsupport.zplatform.impl.spigot.network.pipeline.SpigotPacketDecompressor;
 import protocolsupport.zplatform.impl.spigot.network.pipeline.SpigotWrappedPrepender;
 import protocolsupport.zplatform.impl.spigot.network.pipeline.SpigotWrappedSplitter;
 import protocolsupport.zplatform.itemstack.NBTTagCompoundWrapper;
-import protocolsupport.zplatform.network.NetworkManagerWrapper;
-import protocolsupport.zplatform.network.NetworkState;
+
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
 
 public class SpigotMiscUtils implements PlatformUtils {
 
-	public static NetworkState netStateFromEnumProtocol(EnumProtocol state) {
+	public static NetworkState protocolToNetState(EnumProtocol state) {
 		switch (state) {
 			case HANDSHAKING: {
 				return NetworkState.HANDSHAKING;
@@ -53,6 +64,26 @@ public class SpigotMiscUtils implements PlatformUtils {
 			}
 			case STATUS: {
 				return NetworkState.STATUS;
+			}
+			default: {
+				throw new IllegalArgumentException("Unknown state " + state);
+			}
+		}
+	}
+
+	public static EnumProtocol netStateToProtocol(NetworkState state)  {
+		switch (state) {
+			case HANDSHAKING: {
+				return EnumProtocol.HANDSHAKING;
+			}
+			case PLAY: {
+				return EnumProtocol.PLAY;
+			}
+			case LOGIN: {
+				return EnumProtocol.LOGIN;
+			}
+			case STATUS: {
+				return EnumProtocol.STATUS;
 			}
 			default: {
 				throw new IllegalArgumentException("Unknown state " + state);
@@ -87,13 +118,33 @@ public class SpigotMiscUtils implements PlatformUtils {
 	}
 
 	@Override
+	public List<Player> getNearbyPlayers(Location location, double rX, double rY, double rZ) {
+		WorldServer nmsWorld = ((CraftWorld) location.getWorld()).getHandle();
+		double locX = location.getX();
+		double locY = location.getY();
+		double locZ = location.getZ();
+		List<EntityPlayer> nmsPlayers = nmsWorld.a(EntityPlayer.class, new AxisAlignedBB(locX - rX, locY - rY, locZ - rZ, locX + rX, locY + rY, locZ + rZ), Predicates.alwaysTrue());
+		return Lists.transform(nmsPlayers, EntityPlayer::getBukkitEntity);
+	}
+
+	@Override
 	public String getOutdatedServerMessage() {
 		return SpigotConfig.outdatedServerMessage;
 	}
 
 	@Override
-	public boolean isBungeeEnabled() {
+	public boolean isRunning() {
+		return getServer().isRunning();
+	}
+
+	@Override
+	public boolean isProxyEnabled() {
 		return SpigotConfig.bungee;
+	}
+
+	@Override
+	public boolean isProxyPreventionEnabled() {
+		return getServer().ac();
 	}
 
 	@Override
@@ -139,26 +190,6 @@ public class SpigotMiscUtils implements PlatformUtils {
 	}
 
 	@Override
-	public Statistic getStatisticByName(String value) {
-		return CraftStatistic.getBukkitStatisticByName(value);
-	}
-
-	@Override
-	public String getStatisticName(Statistic stat) {
-		return CraftStatistic.getNMSStatistic(stat).name;
-	}
-
-	@Override
-	public Achievement getAchievmentByName(String value) {
-		return CraftStatistic.getBukkitAchievementByName(value);
-	}
-
-	@Override
-	public String getAchievmentName(Achievement achievement) {
-		return CraftStatistic.getNMSAchievement(achievement).name;
-	}
-
-	@Override
 	public String convertBukkitIconToBase64(CachedServerIcon icon) {
 		if (icon == null) {
 			return null;
@@ -170,28 +201,23 @@ public class SpigotMiscUtils implements PlatformUtils {
 	}
 
 	@Override
-	public NetworkState getNetworkStateFromChannel(Channel channel) {
-		return netStateFromEnumProtocol(channel.attr(NetworkManager.c).get());
-	}
-
-	@Override
-	public NetworkManagerWrapper getNetworkManagerFromChannel(Channel channel) {
-		return SpigotNetworkManagerWrapper.getFromChannel(channel);
-	}
-
-	@Override
 	public String getReadTimeoutHandlerName() {
 		return SpigotChannelHandlers.READ_TIMEOUT;
 	}
 
 	@Override
-	public String getSplitterHandlerName() {
-		return SpigotChannelHandlers.SPLITTER;
+	public void enableCompression(ChannelPipeline pipeline, int compressionThreshold) {
+		pipeline
+		.addAfter(SpigotChannelHandlers.SPLITTER, "decompress", new SpigotPacketDecompressor(compressionThreshold))
+		.addAfter(SpigotChannelHandlers.PREPENDER, "compress", new SpigotPacketCompressor(compressionThreshold));
 	}
 
 	@Override
-	public String getPrependerHandlerName() {
-		return SpigotChannelHandlers.PREPENDER;
+	public void enableEncryption(ChannelPipeline pipeline, SecretKey key, boolean fullEncryption) {
+		pipeline.addBefore(SpigotChannelHandlers.SPLITTER, ChannelHandlers.DECRYPT, new PacketDecrypter(MinecraftEncryption.getCipher(Cipher.DECRYPT_MODE, key)));
+		if (fullEncryption) {
+			pipeline.addBefore(SpigotChannelHandlers.PREPENDER, ChannelHandlers.ENCRYPT, new PacketEncrypter(MinecraftEncryption.getCipher(Cipher.ENCRYPT_MODE, key)));
+		}
 	}
 
 	@Override

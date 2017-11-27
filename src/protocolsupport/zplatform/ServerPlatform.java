@@ -3,6 +3,7 @@ package protocolsupport.zplatform;
 import org.spigotmc.SpigotConfig;
 
 import net.minecraft.server.v1_11_R1.NetworkManager;
+import protocolsupport.api.ServerPlatformIdentifier;
 import protocolsupport.zplatform.impl.spigot.SpigotMiscUtils;
 import protocolsupport.zplatform.impl.spigot.SpigotPacketFactory;
 import protocolsupport.zplatform.impl.spigot.SpigotWrapperFactory;
@@ -19,7 +20,7 @@ public class ServerPlatform {
 		try {
 			NetworkManager.class.getDeclaredFields();
 			SpigotConfig.class.getDeclaredFields();
-//			current = new ServerPlatform("Spigot", new SpigotPlatformInjector(), new SpigotMiscUtils(), new SpigotPacketFactory(), new SpigotWrapperFactory());
+			current = new ServerPlatform(ServerPlatformIdentifier.SPIGOT, new SpigotPlatformInjector(), new SpigotMiscUtils(), new SpigotPacketFactory(), new SpigotWrapperFactory());
 		} catch (Throwable t) {
 		
 		}
@@ -33,21 +34,21 @@ public class ServerPlatform {
 		return current;
 	}
 
-	private final String name;
+	private final ServerPlatformIdentifier identifier;
 	private final PlatformInjector injector;
 	private final PlatformUtils utils;
 	private final PlatformPacketFactory packetfactory;
 	private final PlatformWrapperFactory wrapperfactory;
-	private ServerPlatform(String name, PlatformInjector injector, PlatformUtils miscutils, PlatformPacketFactory packetfactory, PlatformWrapperFactory wrapperfactory) {
-		this.name = name;
+	private ServerPlatform(ServerPlatformIdentifier identifier, PlatformInjector injector, PlatformUtils miscutils, PlatformPacketFactory packetfactory, PlatformWrapperFactory wrapperfactory) {
+		this.identifier = identifier;
 		this.injector = injector;
 		this.utils = miscutils;
 		this.packetfactory = packetfactory;
 		this.wrapperfactory = wrapperfactory;
 	}
 
-	public String getName() {
-		return name;
+	public ServerPlatformIdentifier getIdentifier() {
+		return identifier;
 	}
 
 	public void inject() {

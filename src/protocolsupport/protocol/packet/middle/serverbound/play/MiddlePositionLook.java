@@ -17,12 +17,10 @@ public abstract class MiddlePositionLook extends ServerBoundMiddlePacket {
 
 	@Override
 	public RecyclableCollection<ServerBoundPacketData> toNative() {
-		if (cache.isTeleportConfirmNeeded()) {
-			int teleportId = cache.tryTeleportConfirm(x, y, z);
-			if (teleportId != -1) {
-				return MiddleTeleportAccept.create(teleportId);
-			}
-		}
+		return RecyclableSingletonList.create(create(x, y, z, yaw, pitch, onGround));
+	}
+
+	public static ServerBoundPacketData create(double x, double y, double z, float yaw, float pitch, boolean onGround) {
 		ServerBoundPacketData creator = ServerBoundPacketData.create(ServerBoundPacket.PLAY_POSITION_LOOK);
 		creator.writeDouble(x);
 		creator.writeDouble(y);
@@ -30,7 +28,6 @@ public abstract class MiddlePositionLook extends ServerBoundMiddlePacket {
 		creator.writeFloat(yaw);
 		creator.writeFloat(pitch);
 		creator.writeBoolean(onGround);
-		return RecyclableSingletonList.create(creator);
+		return creator;
 	}
-
 }

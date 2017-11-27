@@ -1,16 +1,17 @@
 package protocolsupport.protocol.utils.types;
 
-import java.text.MessageFormat;
 import java.util.UUID;
+
+import protocolsupport.utils.Utils;
 
 public class NetworkEntity {
 
 	public static NetworkEntity createMob(UUID uuid, int id, int typeId) {
-		return new NetworkEntity(uuid, id, NetworkEntityType.getMobByTypeId(typeId));
+		return new NetworkEntity(uuid, id, NetworkEntityType.getMobByNetworkTypeId(typeId));
 	}
 
 	public static NetworkEntity createObject(UUID uuid, int id, int typeId, int objectData) {
-		return new NetworkEntity(uuid, id, NetworkEntityType.getObjectByTypeAndData(typeId, objectData));
+		return new NetworkEntity(uuid, id, NetworkEntityType.getObjectByNetworkTypeIdAndData(typeId, objectData));
 	}
 
 	public static NetworkEntity createPlayer(UUID uuid, int id) {
@@ -51,11 +52,16 @@ public class NetworkEntity {
 
 	@Override
 	public String toString() {
-		return MessageFormat.format("{0}(UUID: {1}, Id: {2}, Type: {3})", getClass().getSimpleName(), getUUID(), getId(), getType());
+		return Utils.toStringAllFields(this);
 	}
 
 	public static class DataCache {
+		public boolean firstMeta = true;
 		public byte baseMetaFlags;
+		@Override
+		public String toString() {
+			return Utils.toStringAllFields(this);
+		}
 	}
 
 }

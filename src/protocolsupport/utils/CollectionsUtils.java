@@ -4,6 +4,7 @@ import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -15,6 +16,14 @@ public class CollectionsUtils {
 
 	public static <K, V extends Enum<V>> Map<K, V> makeEnumMappingMap(Class<V> e, Function<V, K> mapping) {
 		HashMap<K, V> map = new HashMap<>();
+		for (V v : e.getEnumConstants()) {
+			map.put(mapping.apply(v), v);
+		}
+		return map;
+	}
+
+	public static <K extends Enum<K>, V extends Enum<V>> EnumMap<K, V> makeEnumMappingEnumMap(Class<V> e, Class<K> k, Function<V, K> mapping) {
+		EnumMap<K, V> map = new EnumMap<>(k);
 		for (V v : e.getEnumConstants()) {
 			map.put(mapping.apply(v), v);
 		}
@@ -43,7 +52,7 @@ public class CollectionsUtils {
 			int minKey = entries.stream().min(Comparator.comparingInt(e -> e.key)).get().key;
 			int maxKey = entries.stream().max(Comparator.comparingInt(e -> e.key)).get().key;
 			this.offset = -minKey;
-			this.array = new Object[maxKey - minKey + 1];
+			this.array = new Object[(maxKey - minKey) + 1];
 			entries.stream().forEach(entry -> put(entry.key, entry.value));
 		}
 
@@ -52,13 +61,17 @@ public class CollectionsUtils {
 			this(Arrays.asList(entries));
 		}
 
+		public int getMinKey() {
+			return -offset;
+		}
+
+		public int getMaxKey() {
+			return array.length + offset;
+		}
+
 		@SuppressWarnings("unchecked")
 		public T get(int key) {
-			int aindex = key + offset;
-			if ((aindex >= array.length) || (aindex < 0)) {
-				return null;
-			}
-			return (T) array[aindex];
+			return (T) Utils.getFromArrayOrNull(array, key + offset);
 		}
 
 		public void put(int key, T value) {
@@ -67,6 +80,10 @@ public class CollectionsUtils {
 				throw new IllegalArgumentException(MessageFormat.format("Cant fit key {0} in size {1} and offset {2}", key, array.length, offset));
 			}
 			array[aindex] = value;
+		}
+
+		public void clear() {
+			Arrays.fill(array, null);
 		}
 
 		public static class Entry<T> {

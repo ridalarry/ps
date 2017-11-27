@@ -1,15 +1,20 @@
 package protocolsupport.protocol.pipeline.version.v_1_5;
 
 import protocolsupport.api.Connection;
+import protocolsupport.api.utils.NetworkState;
 import protocolsupport.protocol.packet.ClientBoundPacket;
 import protocolsupport.protocol.packet.middleimpl.clientbound.login.noop.NoopLoginSuccess;
 import protocolsupport.protocol.packet.middleimpl.clientbound.login.noop.NoopSetCompression;
 import protocolsupport.protocol.packet.middleimpl.clientbound.login.v_4_5_6.LoginDisconnect;
-import protocolsupport.protocol.packet.middleimpl.clientbound.login.v_4_5_6_7_8_9r1_9r2_10_11_12.EncryptionRequest;
+import protocolsupport.protocol.packet.middleimpl.clientbound.login.v_4_5_6_7_8_9r1_9r2_10_11.EncryptionRequest;
+import protocolsupport.protocol.packet.middleimpl.clientbound.play.noop.NoopAdvancements;
+import protocolsupport.protocol.packet.middleimpl.clientbound.play.noop.NoopAdvanementsTab;
 import protocolsupport.protocol.packet.middleimpl.clientbound.play.noop.NoopBlockOpenSignEditor;
 import protocolsupport.protocol.packet.middleimpl.clientbound.play.noop.NoopBossBar;
 import protocolsupport.protocol.packet.middleimpl.clientbound.play.noop.NoopCamera;
 import protocolsupport.protocol.packet.middleimpl.clientbound.play.noop.NoopCombatEvent;
+import protocolsupport.protocol.packet.middleimpl.clientbound.play.noop.NoopCraftingGridConfirm;
+import protocolsupport.protocol.packet.middleimpl.clientbound.play.noop.NoopEntityLeash;
 import protocolsupport.protocol.packet.middleimpl.clientbound.play.noop.NoopEntitySetAttributes;
 import protocolsupport.protocol.packet.middleimpl.clientbound.play.noop.NoopPlayerListHeaderFooter;
 import protocolsupport.protocol.packet.middleimpl.clientbound.play.noop.NoopResourcePack;
@@ -17,10 +22,10 @@ import protocolsupport.protocol.packet.middleimpl.clientbound.play.noop.NoopServ
 import protocolsupport.protocol.packet.middleimpl.clientbound.play.noop.NoopSetCooldown;
 import protocolsupport.protocol.packet.middleimpl.clientbound.play.noop.NoopStatistics;
 import protocolsupport.protocol.packet.middleimpl.clientbound.play.noop.NoopTitle;
+import protocolsupport.protocol.packet.middleimpl.clientbound.play.noop.NoopUnlockRecipes;
 import protocolsupport.protocol.packet.middleimpl.clientbound.play.noop.NoopVehicleMove;
 import protocolsupport.protocol.packet.middleimpl.clientbound.play.noop.NoopWorldBorder;
 import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5.Chat;
-import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5.EntityLeash;
 import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5.PlayerAbilities;
 import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5.Position;
 import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5.SetHealth;
@@ -69,14 +74,14 @@ import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5_6_7.Unl
 import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5_6_7.WorldEvent;
 import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5_6_7_8.WorldCustomSound;
 import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5_6_7_8.WorldSound;
-import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5_6_7_8_9r1_9r2_10_11_12.EntityStatus;
-import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5_6_7_8_9r1_9r2_10_11_12.InventoryClose;
-import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5_6_7_8_9r1_9r2_10_11_12.InventoryConfirmTransaction;
-import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5_6_7_8_9r1_9r2_10_11_12.InventoryData;
-import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5_6_7_8_9r1_9r2_10_11_12.InventorySetItems;
-import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5_6_7_8_9r1_9r2_10_11_12.InventorySetSlot;
-import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5_6_7_8_9r1_9r2_10_11_12.ScoreboardDisplay;
-import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5_6_7_8_9r1_9r2_10_11_12.TimeUpdate;
+import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5_6_7_8_9r1_9r2_10_11.EntityStatus;
+import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5_6_7_8_9r1_9r2_10_11.InventoryClose;
+import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5_6_7_8_9r1_9r2_10_11.InventoryConfirmTransaction;
+import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5_6_7_8_9r1_9r2_10_11.InventoryData;
+import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5_6_7_8_9r1_9r2_10_11.InventorySetItems;
+import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5_6_7_8_9r1_9r2_10_11.InventorySetSlot;
+import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5_6_7_8_9r1_9r2_10_11.ScoreboardDisplay;
+import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5_6_7_8_9r1_9r2_10_11.TimeUpdate;
 import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_5_6_7.InventoryOpen;
 import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_5_6_7.ScoreboardObjective;
 import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_5_6_7.ScoreboardScore;
@@ -84,12 +89,11 @@ import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_5_6_7.Score
 import protocolsupport.protocol.packet.middleimpl.clientbound.play.v_5_6_7.WorldParticle;
 import protocolsupport.protocol.packet.middleimpl.clientbound.status.noop.NoopPong;
 import protocolsupport.protocol.packet.middleimpl.clientbound.status.v_5_6.ServerInfo;
-import protocolsupport.protocol.pipeline.version.AbstractPacketEncoder;
+import protocolsupport.protocol.pipeline.version.AbstractLegacyPacketEncoder;
 import protocolsupport.protocol.storage.NetworkDataCache;
 import protocolsupport.protocol.utils.registry.PacketIdTransformerRegistry;
-import protocolsupport.zplatform.network.NetworkState;
 
-public class PacketEncoder extends AbstractPacketEncoder {
+public class PacketEncoder extends AbstractLegacyPacketEncoder {
 
 	private static final PacketIdTransformerRegistry packetIdRegistry = new PacketIdTransformerRegistry();
 	static {
@@ -198,7 +202,7 @@ public class PacketEncoder extends AbstractPacketEncoder {
 		registry.register(NetworkState.PLAY, ClientBoundPacket.PLAY_ENTITY_TELEPORT_ID, EntityTeleport.class);
 		registry.register(NetworkState.PLAY, ClientBoundPacket.PLAY_ENTITY_HEAD_ROTATION_ID, EntityHeadRotation.class);
 		registry.register(NetworkState.PLAY, ClientBoundPacket.PLAY_ENTITY_STATUS_ID, EntityStatus.class);
-		registry.register(NetworkState.PLAY, ClientBoundPacket.PLAY_ENTITY_LEASH_ID, EntityLeash.class);
+		registry.register(NetworkState.PLAY, ClientBoundPacket.PLAY_ENTITY_LEASH_ID, NoopEntityLeash.class);
 		registry.register(NetworkState.PLAY, ClientBoundPacket.PLAY_ENTITY_METADATA_ID, EntityMetadata.class);
 		registry.register(NetworkState.PLAY, ClientBoundPacket.PLAY_ENTITY_EFFECT_ADD_ID, EntityEffectAdd.class);
 		registry.register(NetworkState.PLAY, ClientBoundPacket.PLAY_ENTITY_EFFECT_REMOVE_ID, EntityEffectRemove.class);
@@ -247,6 +251,10 @@ public class PacketEncoder extends AbstractPacketEncoder {
 		registry.register(NetworkState.PLAY, ClientBoundPacket.PLAY_RESOURCE_PACK_ID, NoopResourcePack.class);
 		registry.register(NetworkState.PLAY, ClientBoundPacket.PLAY_SIGN_EDITOR_ID, NoopBlockOpenSignEditor.class);
 		registry.register(NetworkState.PLAY, ClientBoundPacket.PLAY_ENTITY_ATTRIBUTES_ID, NoopEntitySetAttributes.class);
+		registry.register(NetworkState.PLAY, ClientBoundPacket.PLAY_UNLOCK_RECIPES, NoopUnlockRecipes.class);
+		registry.register(NetworkState.PLAY, ClientBoundPacket.PLAY_ADVANCEMENTS, NoopAdvancements.class);
+		registry.register(NetworkState.PLAY, ClientBoundPacket.PLAY_ADVANCEMENTS_TAB, NoopAdvanementsTab.class);
+		registry.register(NetworkState.PLAY, ClientBoundPacket.PLAY_CRAFTING_GRID_CONFIRM, NoopCraftingGridConfirm.class);
 	}
 
 	public PacketEncoder(Connection connection, NetworkDataCache storage) {

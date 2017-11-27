@@ -7,17 +7,14 @@ import protocolsupport.protocol.packet.middleimpl.ClientBoundPacketData;
 import protocolsupport.protocol.typeremapper.id.IdRemapper;
 import protocolsupport.protocol.utils.types.NetworkEntityType;
 import protocolsupport.utils.recyclable.RecyclableCollection;
-import protocolsupport.utils.recyclable.RecyclableEmptyList;
 import protocolsupport.utils.recyclable.RecyclableSingletonList;
 
 public class SpawnObject extends MiddleSpawnObject {
 
 	@Override
-	public RecyclableCollection<ClientBoundPacketData> toData(ProtocolVersion version) {
+	public RecyclableCollection<ClientBoundPacketData> toData() {
+		ProtocolVersion version = connection.getVersion();
 		NetworkEntityType type = entity.getType();
-		if (type == NetworkEntityType.ARMOR_STAND_OBJECT) {
-			return RecyclableEmptyList.get();
-		}
 		x *= 32;
 		y *= 32;
 		z *= 32;
@@ -55,7 +52,7 @@ public class SpawnObject extends MiddleSpawnObject {
 		}
 		ClientBoundPacketData serializer = ClientBoundPacketData.create(ClientBoundPacket.PLAY_SPAWN_OBJECT_ID, version);
 		serializer.writeInt(entity.getId());
-		serializer.writeByte(IdRemapper.ENTITY.getTable(version).getRemap(type).getTypeId());
+		serializer.writeByte(IdRemapper.ENTITY.getTable(version).getRemap(type).getNetworkTypeId());
 		serializer.writeInt((int) x);
 		serializer.writeInt((int) y);
 		serializer.writeInt((int) z);

@@ -1,13 +1,13 @@
 package protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5;
 
 import io.netty.buffer.ByteBuf;
-import protocolsupport.api.ProtocolVersion;
-import protocolsupport.protocol.packet.ServerBoundPacket;
 import protocolsupport.protocol.packet.middle.ServerBoundMiddlePacket;
+import protocolsupport.protocol.packet.middle.serverbound.play.MiddleLook;
+import protocolsupport.protocol.packet.middle.serverbound.play.MiddlePositionLook;
 import protocolsupport.protocol.packet.middle.serverbound.play.MiddleTeleportAccept;
 import protocolsupport.protocol.packet.middleimpl.ServerBoundPacketData;
+import protocolsupport.utils.recyclable.RecyclableArrayList;
 import protocolsupport.utils.recyclable.RecyclableCollection;
-import protocolsupport.utils.recyclable.RecyclableEmptyList;
 import protocolsupport.utils.recyclable.RecyclableSingletonList;
 
 public class PositionLook extends ServerBoundMiddlePacket {
@@ -21,7 +21,7 @@ public class PositionLook extends ServerBoundMiddlePacket {
 	protected boolean onGround;
 
 	@Override
-	public void readFromClientData(ByteBuf clientdata, ProtocolVersion version) {
+	public void readFromClientData(ByteBuf clientdata) {
 		x = clientdata.readDouble();
 		y = clientdata.readDouble();
 		yhead = clientdata.readDouble();
@@ -34,28 +34,16 @@ public class PositionLook extends ServerBoundMiddlePacket {
 	@Override
 	public RecyclableCollection<ServerBoundPacketData> toNative() {
 		if ((y == -999.0D) && (yhead == -999.0D)) {
-			ServerBoundPacketData creator = ServerBoundPacketData.create(ServerBoundPacket.PLAY_LOOK);
-			creator.writeFloat(yaw);
-			creator.writeFloat(pitch);
-			creator.writeBoolean(onGround);
-			return RecyclableSingletonList.create(creator);
+			return RecyclableSingletonList.create(MiddleLook.create(yaw, pitch, onGround));
 		} else {
-			if (!cache.isTeleportConfirmNeeded()) {
-				ServerBoundPacketData creator = ServerBoundPacketData.create(ServerBoundPacket.PLAY_POSITION_LOOK);
-				creator.writeDouble(x);
-				creator.writeDouble(y);
-				creator.writeDouble(z);
-				creator.writeFloat(yaw);
-				creator.writeFloat(pitch);
-				creator.writeBoolean(onGround);
-				return RecyclableSingletonList.create(creator);
+			int teleportId = cache.tryTeleportConfirm(x, y, z);
+			if (teleportId == -1) {
+				return RecyclableSingletonList.create(MiddlePositionLook.create(x, y, z, yaw, pitch, onGround));
 			} else {
-				int teleportId = cache.tryTeleportConfirm(x, y, z);
-				if (teleportId == -1) {
-					return RecyclableEmptyList.get();
-				} else {
-					return MiddleTeleportAccept.create(teleportId);
-				}
+				RecyclableArrayList<ServerBoundPacketData> packets = RecyclableArrayList.create();
+				packets.add(MiddleTeleportAccept.create(teleportId));
+				packets.add(MiddlePositionLook.create(x, y, z, yaw, pitch, onGround));
+				return packets;
 			}
 		}
 	}

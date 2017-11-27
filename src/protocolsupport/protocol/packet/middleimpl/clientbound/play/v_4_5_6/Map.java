@@ -3,13 +3,13 @@ package protocolsupport.protocol.packet.middleimpl.clientbound.play.v_4_5_6;
 import org.bukkit.Material;
 
 import protocolsupport.api.ProtocolVersion;
-import protocolsupport.protocol.legacyremapper.LegacyMap;
-import protocolsupport.protocol.legacyremapper.LegacyMap.ColumnEntry;
 import protocolsupport.protocol.packet.ClientBoundPacket;
 import protocolsupport.protocol.packet.middle.clientbound.play.MiddleMap;
 import protocolsupport.protocol.packet.middleimpl.ClientBoundPacketData;
-import protocolsupport.protocol.typeremapper.id.IdRemapper;
-import protocolsupport.protocol.typeremapper.id.RemappingTable.ArrayBasedIdRemappingTable;
+import protocolsupport.protocol.typeremapper.legacy.LegacyMap;
+import protocolsupport.protocol.typeremapper.legacy.LegacyMap.ColumnEntry;
+import protocolsupport.protocol.typeremapper.mapcolor.MapColorRemapper;
+import protocolsupport.protocol.typeremapper.utils.RemappingTable.ArrayBasedIdRemappingTable;
 import protocolsupport.utils.recyclable.RecyclableArrayList;
 import protocolsupport.utils.recyclable.RecyclableCollection;
 
@@ -19,7 +19,8 @@ public class Map extends MiddleMap {
 	private static final int mapId = Material.MAP.getId();
 
 	@Override
-	public RecyclableCollection<ClientBoundPacketData> toData(ProtocolVersion version) {
+	public RecyclableCollection<ClientBoundPacketData> toData() {
+		ProtocolVersion version = connection.getVersion();
 		RecyclableCollection<ClientBoundPacketData> datas = RecyclableArrayList.create();
 		ClientBoundPacketData scaledata = ClientBoundPacketData.create(ClientBoundPacket.PLAY_MAP_ID, version);
 		scaledata.writeShort(358);
@@ -43,8 +44,8 @@ public class Map extends MiddleMap {
 		}
 		if (columns > 0) {
 			LegacyMap maptransformer = new LegacyMap();
-			maptransformer.loadFromNewMapData(columns, rows, xstart, zstart, data);
-			ArrayBasedIdRemappingTable colorRemapper = IdRemapper.MAPCOLOR.getTable(version);
+			maptransformer.loadFromNewMapData(columns, rows, xstart, zstart, colors);
+			ArrayBasedIdRemappingTable colorRemapper = MapColorRemapper.REMAPPER.getTable(version);
 			for (ColumnEntry entry : maptransformer.toPre18MapData()) {
 				ClientBoundPacketData mapdata = ClientBoundPacketData.create(ClientBoundPacket.PLAY_MAP_ID, version);
 				mapdata.writeShort(mapId);
@@ -55,7 +56,7 @@ public class Map extends MiddleMap {
 				mapdata.writeByte(entry.getY());
 				byte[] colors = entry.getColors();
 				for (int i = 0; i < colors.length; i++) {
-					colors[i] = (byte) colorRemapper.getRemap(colors[i]);
+					colors[i] = (byte) colorRemapper.getRemap(colors[i] & 0xFF);
 				}
 				mapdata.writeBytes(colors);
 				datas.add(mapdata);

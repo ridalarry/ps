@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.bukkit.Material;
+import org.bukkit.craftbukkit.v1_11_R1.entity.CraftEntity;
 import org.spigotmc.SpigotConfig;
 
 import com.google.common.collect.BiMap;
@@ -43,7 +44,7 @@ public class SpigotPacketFactory implements PlatformPacketFactory {
 
 	@Override
 	public Object createOutboundChatPacket(String message, int position) {
-		return new PacketPlayOutChat(ChatSerializer.a(message), (byte) position);
+		return new PacketPlayOutChat(ChatSerializer.a(message), ChatMessageType.a((byte) position));
 	}
 
 	private static final BaseComponent empty = new TextComponent("");
@@ -159,6 +160,11 @@ public class SpigotPacketFactory implements PlatformPacketFactory {
 	@Override
 	public Object createFakeJoinGamePacket() {
 		return new PacketPlayOutLogin(0, EnumGamemode.NOT_SET, false, 0, EnumDifficulty.EASY, 60, WorldType.NORMAL, false);
+	}
+
+	@Override
+	public Object createEntityStatusPacket(org.bukkit.entity.Entity entity, int status) {
+		return new PacketPlayOutEntityStatus(((CraftEntity) entity).getHandle(), (byte) status);
 	}
 
 
@@ -572,6 +578,26 @@ public class SpigotPacketFactory implements PlatformPacketFactory {
 		return getOutId(PacketPlayOutVehicleMove.class);
 	}
 
+	@Override
+	public int getOutPlayUnlockRecipesPacketId() {
+		return getOutId(PacketPlayOutRecipes.class);
+	}
+
+	@Override
+	public int getOutPlayAdvancementsPacketId() {
+		return getOutId(PacketPlayOutAdvancements.class);
+	}
+
+	@Override
+	public int getOutPlayAdvancementsTabPacketId() {
+		return getOutId(PacketPlayOutSelectAdvancementTab.class);
+	}
+
+	@Override
+	public int getOutPlayCraftingGridConfirmPacketId() {
+		return getOutId(PacketPlayOutAutoRecipe.class);
+	}
+
 
 	@Override
 	public int getInHandshakeStartPacketId() {
@@ -746,6 +772,21 @@ public class SpigotPacketFactory implements PlatformPacketFactory {
 	@Override
 	public int getInPlayTeleportAcceptPacketId() {
 		return getInId(PacketPlayInTeleportAccept.class);
+	}
+
+	@Override
+	public int getInPlayCraftingBookPacketId() {
+		return getInId(PacketPlayInRecipeDisplayed.class);
+	}
+
+	@Override
+	public int getInPlayPrepareCraftingGridPacketId() {
+		return getInId(PacketPlayInAutoRecipe.class);
+	}
+
+	@Override
+	public int getInPlayAdvancementTabPacketId() {
+		return getInId(PacketPlayInAdvancements.class);
 	}
 
 

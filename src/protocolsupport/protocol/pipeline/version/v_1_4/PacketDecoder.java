@@ -1,8 +1,9 @@
 package protocolsupport.protocol.pipeline.version.v_1_4;
 
 import protocolsupport.api.Connection;
+import protocolsupport.api.utils.NetworkState;
 import protocolsupport.protocol.packet.middleimpl.serverbound.handshake.v_4_5_6.ClientLogin;
-import protocolsupport.protocol.packet.middleimpl.serverbound.login.v_4_5_6_7_8_9r1_9r2_10_11_12.EncryptionResponse;
+import protocolsupport.protocol.packet.middleimpl.serverbound.login.v_4_5_6_7_8_9r1_9r2_10_11.EncryptionResponse;
 import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5.EntityAction;
 import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5.PlayerAbilities;
 import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5.PositionLook;
@@ -18,18 +19,17 @@ import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5_6_7.Kee
 import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5_6_7.Position;
 import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5_6_7.TabComplete;
 import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5_6_7.UpdateSign;
-import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5_6_7_8_9r1_9r2_10_11_12.Chat;
-import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5_6_7_8_9r1_9r2_10_11_12.CreativeSetSlot;
-import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5_6_7_8_9r1_9r2_10_11_12.Flying;
-import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5_6_7_8_9r1_9r2_10_11_12.HeldSlot;
-import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5_6_7_8_9r1_9r2_10_11_12.InventoryClick;
-import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5_6_7_8_9r1_9r2_10_11_12.InventoryClose;
-import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5_6_7_8_9r1_9r2_10_11_12.InventoryEnchant;
-import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5_6_7_8_9r1_9r2_10_11_12.InventoryTransaction;
-import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5_6_7_8_9r1_9r2_10_11_12.Look;
+import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5_6_7_8_9r1_9r2_10_11.Chat;
+import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5_6_7_8_9r1_9r2_10_11.CreativeSetSlot;
+import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5_6_7_8_9r1_9r2_10_11.Flying;
+import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5_6_7_8_9r1_9r2_10_11.HeldSlot;
+import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5_6_7_8_9r1_9r2_10_11.InventoryClick;
+import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5_6_7_8_9r1_9r2_10_11.InventoryClose;
+import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5_6_7_8_9r1_9r2_10_11.InventoryEnchant;
+import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5_6_7_8_9r1_9r2_10_11.InventoryTransaction;
+import protocolsupport.protocol.packet.middleimpl.serverbound.play.v_4_5_6_7_8_9r1_9r2_10_11.Look;
 import protocolsupport.protocol.pipeline.version.AbstractLegacyPacketDecoder;
 import protocolsupport.protocol.storage.NetworkDataCache;
-import protocolsupport.zplatform.network.NetworkState;
 
 public class PacketDecoder extends AbstractLegacyPacketDecoder {
 

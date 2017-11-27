@@ -6,22 +6,44 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.bukkit.Material;
 
 import protocolsupport.api.ProtocolVersion;
-import protocolsupport.protocol.typeremapper.id.RemappingRegistry.EnumRemappingRegistry;
-import protocolsupport.protocol.typeremapper.id.RemappingRegistry.IdRemappingRegistry;
-import protocolsupport.protocol.typeremapper.id.RemappingTable.ArrayBasedIdRemappingTable;
-import protocolsupport.protocol.typeremapper.id.RemappingTable.EnumRemappingTable;
-import protocolsupport.protocol.typeremapper.id.RemappingTable.HashMapBasedIdRemappingTable;
+import protocolsupport.protocol.typeremapper.utils.RemappingRegistry.EnumRemappingRegistry;
+import protocolsupport.protocol.typeremapper.utils.RemappingRegistry.IdRemappingRegistry;
+import protocolsupport.protocol.typeremapper.utils.RemappingTable.ArrayBasedIdRemappingTable;
+import protocolsupport.protocol.typeremapper.utils.RemappingTable.EnumRemappingTable;
+import protocolsupport.protocol.typeremapper.utils.RemappingTable.HashMapBasedIdRemappingTable;
+import protocolsupport.protocol.utils.ProtocolVersionsHelper;
+import protocolsupport.protocol.utils.minecraftdata.MinecraftData;
 import protocolsupport.protocol.utils.types.NetworkEntityType;
 import protocolsupport.protocol.utils.types.WindowType;
-import protocolsupport.utils.ProtocolVersionsHelper;
 
 public class IdRemapper {
 
-	public static final IdRemappingRegistry<ArrayBasedIdRemappingTable> BLOCK = new IdRemappingRegistry<ArrayBasedIdRemappingTable>() {
+	public static final BlockIdDataRemappingRegistry BLOCK = new BlockIdDataRemappingRegistry();
 
-		private static final int DATA_MAX = 16;
-
+	public static class BlockIdDataRemappingRegistry extends IdRemappingRegistry<ArrayBasedIdRemappingTable> {
 		{
+			applyDefaultRemaps();
+		}
+		public void applyDefaultRemaps() {
+			remappings.clear();
+			registerRemapEntry(Material.CONCRETE, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
+			registerRemapEntry(Material.CONCRETE_POWDER, Material.WOOL, ProtocolVersionsHelper.BEFORE_1_12);
+			registerRemapEntry(Material.WHITE_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
+			registerRemapEntry(Material.ORANGE_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
+			registerRemapEntry(Material.MAGENTA_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
+			registerRemapEntry(Material.LIGHT_BLUE_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
+			registerRemapEntry(Material.YELLOW_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
+			registerRemapEntry(Material.LIME_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
+			registerRemapEntry(Material.PINK_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
+			registerRemapEntry(Material.GRAY_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
+			registerRemapEntry(Material.SILVER_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
+			registerRemapEntry(Material.CYAN_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
+			registerRemapEntry(Material.PURPLE_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
+			registerRemapEntry(Material.BLUE_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
+			registerRemapEntry(Material.BROWN_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
+			registerRemapEntry(Material.GREEN_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
+			registerRemapEntry(Material.RED_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
+			registerRemapEntry(Material.BLACK_GLAZED_TERRACOTTA, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_12);
 			registerRemapEntry(Material.IRON_NUGGET, Material.GOLD_NUGGET, ProtocolVersionsHelper.BEFORE_1_11_1);
 			registerRemapEntry(Material.OBSERVER, Material.FURNACE, 2, ProtocolVersionsHelper.BEFORE_1_11);
 			registerRemapEntry(Material.WHITE_SHULKER_BOX, Material.FURNACE, 2, ProtocolVersionsHelper.BEFORE_1_11);
@@ -44,8 +66,8 @@ public class IdRemapper {
 			registerRemapEntry(Material.NETHER_WART_BLOCK, Material.WOOL, 14, ProtocolVersionsHelper.BEFORE_1_10);
 			registerRemapEntry(Material.RED_NETHER_BRICK, Material.NETHER_BRICK, ProtocolVersionsHelper.BEFORE_1_10);
 			registerRemapEntry(Material.MAGMA, Material.NETHERRACK, ProtocolVersionsHelper.BEFORE_1_10);
-			registerRemapEntry(Material.BONE_BLOCK, Material.BRICK, ProtocolVersionsHelper.BEFORE_1_10);
-			for (int i = 0; i < DATA_MAX; i++) {
+			registerRemapEntry(Material.BONE_BLOCK, Material.BRICK, 0, ProtocolVersionsHelper.BEFORE_1_10);
+			for (int i = 0; i < MinecraftData.BLOCK_DATA_MAX; i++) {
 				int newdata = (i & 0x8) == 0x8 ? 1 : 0;
 				registerRemapEntry(Material.COMMAND_CHAIN, i, Material.COMMAND, newdata, ProtocolVersionsHelper.BEFORE_1_9);
 				registerRemapEntry(Material.COMMAND_REPEATING, i, Material.COMMAND, newdata, ProtocolVersionsHelper.BEFORE_1_9);
@@ -122,24 +144,24 @@ public class IdRemapper {
 			registerRemapEntry(Material.REDSTONE_COMPARATOR_ON, Material.DIODE_BLOCK_ON, ProtocolVersionsHelper.BEFORE_1_5);
 		}
 		protected void registerRemapEntry(Material from, Material to, ProtocolVersion... versions) {
-			for (int i = 0; i < DATA_MAX; i++) {
+			for (int i = 0; i < MinecraftData.BLOCK_DATA_MAX; i++) {
 				registerRemapEntry(from, i, to, i, versions);
 			}
 		}
 		protected void registerRemapEntry(Material matFrom, Material matTo, int dataTo, ProtocolVersion... versions) {
-			for (int i = 0; i < DATA_MAX; i++) {
+			for (int i = 0; i < MinecraftData.BLOCK_DATA_MAX; i++) {
 				registerRemapEntry(matFrom, i, matTo, dataTo, versions);
 			}
 		}
 		@SuppressWarnings("deprecation")
 		protected void registerRemapEntry(Material matFrom, int dataFrom, Material matTo, int dataTo, ProtocolVersion... versions) {
-			registerRemapEntry((matFrom.getId() << 4) | dataFrom, (matTo.getId() << 4) | (dataTo & 0xF), versions);
+			registerRemapEntry(MinecraftData.getBlockStateFromIdAndData(matFrom.getId(), dataFrom), MinecraftData.getBlockStateFromIdAndData(matTo.getId(), dataTo), versions);
 		}
 		@Override
 		protected ArrayBasedIdRemappingTable createTable() {
-			return new ArrayBasedIdRemappingTable(4096 * DATA_MAX);
+			return new ArrayBasedIdRemappingTable(MinecraftData.BLOCK_ID_MAX * MinecraftData.BLOCK_DATA_MAX);
 		}
-	};
+	}
 
 	public static final EnumRemappingRegistry<NetworkEntityType, EnumRemappingTable<NetworkEntityType>> ENTITY = new EnumRemappingRegistry<NetworkEntityType, EnumRemappingTable<NetworkEntityType>>() {
 		final class Mapping {
@@ -159,6 +181,12 @@ public class IdRemapper {
 			}
 		}
 		{
+			new Mapping(NetworkEntityType.PARROT)
+			.addMapping(NetworkEntityType.OCELOT, ProtocolVersionsHelper.BEFORE_1_12)
+			.register();
+			new Mapping(NetworkEntityType.ILLUSIONER)
+			.addMapping(NetworkEntityType.WITCH, ProtocolVersionsHelper.BEFORE_1_12)
+			.register();
 			new Mapping(NetworkEntityType.VINDICATOR)
 			.addMapping(NetworkEntityType.WITCH, ProtocolVersionsHelper.BEFORE_1_11)
 			.register();
@@ -247,45 +275,6 @@ public class IdRemapper {
 		}
 	};
 
-	public static final IdRemappingRegistry<ArrayBasedIdRemappingTable> MAPCOLOR = new IdRemappingRegistry<ArrayBasedIdRemappingTable>() {
-		{
-			//see http://minecraft.gamepedia.com/Map_item_format (i don't event know a names for half of those colors)
-			registerRemapEntry(14, 8, ProtocolVersionsHelper.BEFORE_1_7);
-			registerRemapEntry(15, 10, ProtocolVersionsHelper.BEFORE_1_7);
-			registerRemapEntry(16, 5, ProtocolVersionsHelper.BEFORE_1_7);
-			registerRemapEntry(17, 5, ProtocolVersionsHelper.BEFORE_1_7);
-			registerRemapEntry(18, 2, ProtocolVersionsHelper.BEFORE_1_7);
-			registerRemapEntry(19, 1, ProtocolVersionsHelper.BEFORE_1_7);
-			registerRemapEntry(20, 4, ProtocolVersionsHelper.BEFORE_1_7);
-			registerRemapEntry(21, 11, ProtocolVersionsHelper.BEFORE_1_7);
-			registerRemapEntry(22, 11, ProtocolVersionsHelper.BEFORE_1_7);
-			registerRemapEntry(23, 5, ProtocolVersionsHelper.BEFORE_1_7);
-			registerRemapEntry(24, 5, ProtocolVersionsHelper.BEFORE_1_7);
-			registerRemapEntry(25, 5, ProtocolVersionsHelper.BEFORE_1_7);
-			registerRemapEntry(26, 10, ProtocolVersionsHelper.BEFORE_1_7);
-			registerRemapEntry(27, 7, ProtocolVersionsHelper.BEFORE_1_7);
-			registerRemapEntry(28, 4, ProtocolVersionsHelper.BEFORE_1_7);
-			registerRemapEntry(29, 11, ProtocolVersionsHelper.BEFORE_1_7);
-			registerRemapEntry(30, 2, ProtocolVersionsHelper.BEFORE_1_7);
-			registerRemapEntry(31, 5, ProtocolVersionsHelper.BEFORE_1_7);
-			registerRemapEntry(32, 5, ProtocolVersionsHelper.BEFORE_1_7);
-			registerRemapEntry(33, 7, ProtocolVersionsHelper.BEFORE_1_7);
-			registerRemapEntry(34, 10, ProtocolVersionsHelper.BEFORE_1_7);
-			registerRemapEntry(35, 4, ProtocolVersionsHelper.BEFORE_1_7);
-			registerRemapEntry(36, 10, ProtocolVersionsHelper.BEFORE_1_7);
-		}
-		@Override
-		protected ArrayBasedIdRemappingTable createTable() {
-			return new ArrayBasedIdRemappingTable(64) {
-				@Override
-				public int getRemap(int id) {
-					int realColor = (id & 0xFF) >> 2;
-					return ((table[realColor] << 2) + (id & 0b11));
-				}
-			};
-		}
-	};
-
 	public static final IdRemappingRegistry<HashMapBasedIdRemappingTable> EFFECT = new IdRemappingRegistry<HashMapBasedIdRemappingTable>() {
 		@Override
 		protected HashMapBasedIdRemappingTable createTable() {
@@ -303,8 +292,5 @@ public class IdRemapper {
 			return new EnumRemappingTable<>(WindowType.class);
 		}
 	};
-
-	public static void init() {
-	}
 
 }

@@ -3,12 +3,12 @@ package protocolsupport.protocol.packet.middle.clientbound.play;
 import java.util.UUID;
 
 import io.netty.buffer.ByteBuf;
-import protocolsupport.api.ProtocolType;
-import protocolsupport.api.ProtocolVersion;
 import protocolsupport.protocol.packet.middle.ClientBoundMiddlePacket;
 import protocolsupport.protocol.serializer.MiscSerializer;
 import protocolsupport.protocol.serializer.StringSerializer;
 import protocolsupport.protocol.serializer.VarNumberSerializer;
+import protocolsupport.protocol.utils.EnumConstantLookups;
+import protocolsupport.protocol.utils.ProtocolVersionsHelper;
 
 public abstract class MiddleBossBar extends ClientBoundMiddlePacket {
 
@@ -23,10 +23,10 @@ public abstract class MiddleBossBar extends ClientBoundMiddlePacket {
 	@Override
 	public void readFromServerData(ByteBuf serverdata) {
 		uuid = MiscSerializer.readUUID(serverdata);
-		action = MiscSerializer.readEnum(serverdata, Action.class);
+		action = MiscSerializer.readVarIntEnum(serverdata, Action.CONSTANT_LOOKUP);
 		switch (action) {
 			case ADD: {
-				title = StringSerializer.readString(serverdata, ProtocolVersion.getLatest(ProtocolType.PC));
+				title = StringSerializer.readString(serverdata, ProtocolVersionsHelper.LATEST_PC);
 				percent = serverdata.readFloat();
 				color = VarNumberSerializer.readVarInt(serverdata);
 				divider = VarNumberSerializer.readVarInt(serverdata);
@@ -41,7 +41,7 @@ public abstract class MiddleBossBar extends ClientBoundMiddlePacket {
 				break;
 			}
 			case UPDATE_TITLE: {
-				title = StringSerializer.readString(serverdata, ProtocolVersion.getLatest(ProtocolType.PC));
+				title = StringSerializer.readString(serverdata, ProtocolVersionsHelper.LATEST_PC);
 				break;
 			}
 			case UPDATE_STYLE: {
@@ -58,6 +58,7 @@ public abstract class MiddleBossBar extends ClientBoundMiddlePacket {
 
 	protected enum Action {
 		ADD, REMOVE, UPDATE_PERCENT, UPDATE_TITLE, UPDATE_STYLE, UPDATE_FLAGS;
+		public static final EnumConstantLookups.EnumConstantLookup<Action> CONSTANT_LOOKUP = new EnumConstantLookups.EnumConstantLookup<>(Action.class);
 	}
 
 }

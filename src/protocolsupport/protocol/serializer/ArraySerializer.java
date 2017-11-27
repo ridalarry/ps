@@ -23,7 +23,7 @@ public class ArraySerializer {
 		} else if (isUsingVarIntLength(version)) {
 			length = VarNumberSerializer.readVarInt(from);
 		} else {
-			throw new IllegalArgumentException(MessageFormat.format("Don't know how to read byte array of version {0}", version));
+			throw new IllegalArgumentException(MessageFormat.format("Dont know how to read byte array of version {0}", version));
 		}
 		MiscSerializer.checkLimit(length, limit);
 		return MiscSerializer.readBytes(from, length);
@@ -35,7 +35,7 @@ public class ArraySerializer {
 		} else if (isUsingVarIntLength(version)) {
 			VarNumberSerializer.writeVarInt(to, data.readableBytes());
 		} else {
-			throw new IllegalArgumentException(MessageFormat.format("Don't know how to write byte array of version {0}", version));
+			throw new IllegalArgumentException(MessageFormat.format("Dont know how to write byte array of version {0}", version));
 		}
 		to.writeBytes(data);
 	}
@@ -61,6 +61,23 @@ public class ArraySerializer {
 		return array;
 	}
 
+	public static String[] readVarIntStringArray(ByteBuf from, ProtocolVersion version, int strmaxlength) {
+		return readVarIntTArray(from, String.class, buf -> StringSerializer.readString(buf, version, strmaxlength));
+	}
+
+	public static String[] readVarIntStringArray(ByteBuf from, ProtocolVersion version) {
+		return readVarIntTArray(from, String.class, buf -> StringSerializer.readString(buf, version));
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T> T[] readShortTArray(ByteBuf from, Class<T> tclass, Function<ByteBuf, T> elementReader) {
+		T[] array = (T[]) Array.newInstance(tclass, from.readShort());
+		for (int i = 0; i < array.length; i++) {
+			array[i] = elementReader.apply(from);
+		}
+		return array;
+	}
+
 	public static int[] readVarIntVarIntArray(ByteBuf from) {
 		int[] array = new int[VarNumberSerializer.readVarInt(from)];
 		for (int i = 0; i < array.length; i++) {
@@ -69,16 +86,22 @@ public class ArraySerializer {
 		return array;
 	}
 
-	public static int[] readVarIntIntArray(ByteBuf from) {
-		int[] array = new int[VarNumberSerializer.readVarInt(from)];
-		for (int i = 0; i < array.length; i++) {
-			array[i] = from.readInt();
-		}
-		return array;
-	}
-
 	public static <T> void writeVarIntTArray(ByteBuf to, T[] array, BiConsumer<ByteBuf, T> elementWriter) {
 		VarNumberSerializer.writeVarInt(to, array.length);
+		for (T element : array) {
+			elementWriter.accept(to, element);
+		}
+	}
+
+	public static void writeVarIntStringArray(ByteBuf to, ProtocolVersion version, String[] array) {
+		VarNumberSerializer.writeVarInt(to, array.length);
+		for (String str : array) {
+			StringSerializer.writeString(to, version, str);
+		}
+	}
+
+	public static <T> void writeShortTArray(ByteBuf to, T[] array, BiConsumer<ByteBuf, T> elementWriter) {
+		to.writeShort(array.length);
 		for (T element : array) {
 			elementWriter.accept(to, element);
 		}

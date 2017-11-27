@@ -6,44 +6,23 @@ import javax.crypto.SecretKey;
 
 import org.bukkit.Bukkit;
 
-import io.netty.channel.Channel;
 import net.minecraft.server.v1_11_R1.IChatBaseComponent;
 import net.minecraft.server.v1_11_R1.ITickable;
 import net.minecraft.server.v1_11_R1.PacketLoginInEncryptionBegin;
 import net.minecraft.server.v1_11_R1.PacketLoginInListener;
 import net.minecraft.server.v1_11_R1.PacketLoginInStart;
 import protocolsupport.protocol.packet.handler.AbstractLoginListener;
-import protocolsupport.zplatform.impl.spigot.network.SpigotChannelHandlers;
-import protocolsupport.zplatform.impl.spigot.network.pipeline.SpigotPacketCompressor;
-import protocolsupport.zplatform.impl.spigot.network.pipeline.SpigotPacketDecompressor;
 import protocolsupport.zplatform.network.NetworkManagerWrapper;
 
-public abstract class SpigotLoginListener extends AbstractLoginListener implements ITickable, PacketLoginInListener {
+public class SpigotLoginListener extends AbstractLoginListener implements ITickable, PacketLoginInListener {
 
-	private final boolean hasCompression;
-	public SpigotLoginListener(NetworkManagerWrapper networkmanager, String hostname, boolean hasCompression) {
+	public SpigotLoginListener(NetworkManagerWrapper networkmanager, String hostname) {
 		super(networkmanager, hostname);
-		this.hasCompression = hasCompression;
 	}
 
 	@Override
-	public void F_() {
+	public void e() {
 		tick();
-	}
-
-	@Override
-	protected boolean hasCompression() {
-		return hasCompression;
-	}
-
-	@Override
-	protected void enableCompression(int compressionLevel) {
-		Channel channel = networkManager.getChannel();
-		if (compressionLevel >= 0) {
-			channel.pipeline()
-			.addAfter(SpigotChannelHandlers.SPLITTER, "decompress", new SpigotPacketDecompressor(compressionLevel))
-			.addAfter(SpigotChannelHandlers.PREPENDER, "compress", new SpigotPacketCompressor(compressionLevel));
-		}
 	}
 
 	@Override

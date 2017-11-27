@@ -2,20 +2,20 @@ package protocolsupport.protocol.packet.middleimpl.clientbound.play.v_7;
 
 import protocolsupport.api.ProtocolVersion;
 import protocolsupport.api.events.PlayerPropertiesResolveEvent.ProfileProperty;
-import protocolsupport.protocol.legacyremapper.LegacyDataWatcherSerializer;
 import protocolsupport.protocol.packet.ClientBoundPacket;
 import protocolsupport.protocol.packet.middle.clientbound.play.MiddleSpawnNamed;
 import protocolsupport.protocol.packet.middleimpl.ClientBoundPacketData;
 import protocolsupport.protocol.serializer.StringSerializer;
 import protocolsupport.protocol.serializer.VarNumberSerializer;
-import protocolsupport.protocol.typeremapper.watchedentity.WatchedDataRemapper;
+import protocolsupport.protocol.typeremapper.legacy.LegacyDataWatcherSerializer;
 import protocolsupport.utils.recyclable.RecyclableCollection;
 import protocolsupport.utils.recyclable.RecyclableSingletonList;
 
 public class SpawnNamed extends MiddleSpawnNamed {
 
 	@Override
-	public RecyclableCollection<ClientBoundPacketData> toData(ProtocolVersion version) {
+	public RecyclableCollection<ClientBoundPacketData> toData() {
+		ProtocolVersion version = connection.getVersion();
 		ClientBoundPacketData serializer = ClientBoundPacketData.create(ClientBoundPacket.PLAY_SPAWN_NAMED_ID, version);
 		VarNumberSerializer.writeVarInt(serializer, entity.getId());
 		StringSerializer.writeString(serializer, version, version == ProtocolVersion.MINECRAFT_1_7_10 ? entity.getUUID().toString() : entity.getUUID().toString().replace("-", ""));
@@ -34,7 +34,7 @@ public class SpawnNamed extends MiddleSpawnNamed {
 		serializer.writeByte(yaw);
 		serializer.writeByte(pitch);
 		serializer.writeShort(0);
-		LegacyDataWatcherSerializer.encodeData(serializer, version, WatchedDataRemapper.transform(entity, metadata, version));
+		LegacyDataWatcherSerializer.encodeData(serializer, version, cache.getLocale(), metadata.getRemapped());
 		return RecyclableSingletonList.create(serializer);
 	}
 

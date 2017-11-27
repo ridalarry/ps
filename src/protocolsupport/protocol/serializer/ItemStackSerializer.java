@@ -1,6 +1,7 @@
 package protocolsupport.protocol.serializer;
 
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -19,38 +20,54 @@ import protocolsupport.api.ProtocolType;
 import protocolsupport.api.ProtocolVersion;
 import protocolsupport.api.events.ItemStackWriteEvent;
 import protocolsupport.protocol.typeremapper.itemstack.ItemStackRemapper;
+import protocolsupport.protocol.utils.NBTTagCompoundSerializer;
+import protocolsupport.utils.IntTuple;
 import protocolsupport.zplatform.ServerPlatform;
 import protocolsupport.zplatform.itemstack.ItemStackWrapper;
 import protocolsupport.zplatform.itemstack.NBTTagCompoundWrapper;
 
 public class ItemStackSerializer {
 
-	public static ItemStackWrapper readItemStack(ByteBuf from, ProtocolVersion version) {
+	public static ItemStackWrapper readItemStack(ByteBuf from, ProtocolVersion version, String locale, boolean isFromClient) {
 		int type = from.readShort();
 		if (type >= 0) {
 			ItemStackWrapper itemstack = ServerPlatform.get().getWrapperFactory().createItemStack(type);
 			itemstack.setAmount(from.readByte());
-			itemstack.setData(from.readShort());
+			itemstack.setData(from.readUnsignedShort());
 			itemstack.setTag(readTag(from, version));
-			return ItemStackRemapper.remapServerbound(version, itemstack.cloneItemStack());
+			if (isFromClient) {
+				itemstack = ItemStackRemapper.remapFromClient(version, locale, itemstack.cloneItemStack());
+			}
+			return itemstack;
 		}
-		return ServerPlatform.get().getWrapperFactory().createNullItemStack();
+		return ItemStackWrapper.NULL;
 	}
 
-	public static void writeItemStack(ByteBuf to, ProtocolVersion version, ItemStackWrapper itemstack, boolean fireEvent) {
+	public static void writeItemStack(ByteBuf to, ProtocolVersion version, String locale, ItemStackWrapper itemstack, boolean isToClient) {
 		if (itemstack.isNull()) {
 			to.writeShort(-1);
 			return;
 		}
-		ItemStackWrapper remapped = ItemStackRemapper.remapClientbound(version, itemstack.cloneItemStack());
-		if (fireEvent && (ItemStackWriteEvent.getHandlerList().getRegisteredListeners().length > 0)) {
-			ItemStackWriteEvent event = new InternalItemStackWriteEvent(version, itemstack, remapped);
-			Bukkit.getPluginManager().callEvent(event);
+		ItemStackWrapper witemstack = itemstack;
+		if (isToClient) {
+			witemstack = witemstack.cloneItemStack();
+			IntTuple iddata = ItemStackRemapper.ID_DATA_REMAPPING_REGISTRY.getTable(version).getRemap(witemstack.getTypeId(), witemstack.getData());
+			if (iddata != null) {
+				witemstack.setTypeId(iddata.getI1());
+				if (iddata.getI2() != -1) {
+					witemstack.setData(iddata.getI2());
+				}
+			}
+			if (ItemStackWriteEvent.getHandlerList().getRegisteredListeners().length > 0) {
+				ItemStackWriteEvent event = new InternalItemStackWriteEvent(version, locale, itemstack, witemstack);
+				Bukkit.getPluginManager().callEvent(event);
+			}
+			witemstack = ItemStackRemapper.remapToClient(version, locale, itemstack.getTypeId(), witemstack);
 		}
-		to.writeShort(ItemStackRemapper.ITEM_ID_REMAPPING_REGISTRY.getTable(version).getRemap(remapped.getTypeId()));
-		to.writeByte(remapped.getAmount());
-		to.writeShort(remapped.getData());
-		writeTag(to, version, remapped.getTag());
+		to.writeShort(witemstack.getTypeId());
+		to.writeByte(witemstack.getAmount());
+		to.writeShort(witemstack.getData());
+		writeTag(to, version, witemstack.getTag());
 	}
 
 	public static NBTTagCompoundWrapper readTag(ByteBuf from, ProtocolVersion version) {
@@ -58,22 +75,15 @@ public class ItemStackSerializer {
 			if (isUsingShortLengthNBT(version)) {
 				final short length = from.readShort();
 				if (length < 0) {
-					return ServerPlatform.get().getWrapperFactory().createNullNBTCompound();
+					return NBTTagCompoundWrapper.NULL;
 				}
 				try (InputStream inputstream = new GZIPInputStream(new ByteBufInputStream(from.readSlice(length)))) {
-					return ServerPlatform.get().getWrapperFactory().createNBTCompoundFromStream(inputstream);
+					return NBTTagCompoundSerializer.readTag(new DataInputStream(inputstream));
 				}
-			} else if (isUsingDirectOrZeroIfNoneNBT(version)) {
-				from.markReaderIndex();
-				if (from.readByte() == 0) {
-					return ServerPlatform.get().getWrapperFactory().createNullNBTCompound();
-				}
-				from.resetReaderIndex();
-				try (DataInputStream datainputstream = new DataInputStream(new ByteBufInputStream(from))) {
-					return ServerPlatform.get().getWrapperFactory().createNBTCompoundFromStream(datainputstream);
-				}
+			} else if (isUsingDirectNBT(version)) {
+				return NBTTagCompoundSerializer.readTag(new ByteBufInputStream(from));
 			} else {
-				throw new IllegalArgumentException(MessageFormat.format("Don't know how to read nbt of version {0}", version));
+				throw new IllegalArgumentException(MessageFormat.format("Dont know how to read nbt of version {0}", version));
 			}
 		} catch (IOException e) {
 			throw new DecoderException(e);
@@ -91,21 +101,15 @@ public class ItemStackSerializer {
 					to.writeShort(0);
 					//actual nbt
 					try (OutputStream outputstream = new GZIPOutputStream(new ByteBufOutputStream(to))) {
-						tag.writeToStream(outputstream);
+						NBTTagCompoundSerializer.writeTag(new DataOutputStream(outputstream), tag);
 					}
 					//now replace fake length with real length
 					to.setShort(writerIndex, to.writerIndex() - writerIndex - Short.BYTES);
 				}
-			} else if (isUsingDirectOrZeroIfNoneNBT(version)) {
-				if (tag.isNull()) {
-					to.writeByte(0);
-				} else {
-					try (OutputStream outputstream = new ByteBufOutputStream(to)) {
-						tag.writeToStream(outputstream);
-					}
-				}
+			} else if (isUsingDirectNBT(version)) {
+				NBTTagCompoundSerializer.writeTag(new ByteBufOutputStream(to), tag);
 			} else {
-				throw new IllegalArgumentException(MessageFormat.format("Don't know how to write nbt of version {0}", version));
+				throw new IllegalArgumentException(MessageFormat.format("Dont know how to write nbt of version {0}", version));
 			}
 		} catch (Throwable ioexception) {
 			throw new EncoderException(ioexception);
@@ -116,15 +120,15 @@ public class ItemStackSerializer {
 		return (version.getProtocolType() == ProtocolType.PC) && version.isBeforeOrEq(ProtocolVersion.MINECRAFT_1_7_10);
 	}
 
-	private static final boolean isUsingDirectOrZeroIfNoneNBT(ProtocolVersion version) {
+	private static final boolean isUsingDirectNBT(ProtocolVersion version) {
 		return (version.getProtocolType() == ProtocolType.PC) && version.isAfterOrEq(ProtocolVersion.MINECRAFT_1_8);
 	}
 
 	public static class InternalItemStackWriteEvent extends ItemStackWriteEvent {
 
 		private final org.bukkit.inventory.ItemStack wrapped;
-		public InternalItemStackWriteEvent(ProtocolVersion version, ItemStackWrapper original, ItemStackWrapper itemstack) {
-			super(version, original.asBukkitMirror());
+		public InternalItemStackWriteEvent(ProtocolVersion version, String locale, ItemStackWrapper original, ItemStackWrapper itemstack) {
+			super(version, locale, original.asBukkitMirror());
 			this.wrapped = itemstack.asBukkitMirror();
 		}
 

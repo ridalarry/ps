@@ -17,10 +17,6 @@ public class SpigotItemStackWrapper extends ItemStackWrapper {
 		this.itemstack = itemstack;
 	}
 
-	public static ItemStackWrapper createNull() {
-		return new SpigotItemStackWrapper(ItemStack.a);
-	}
-
 	public static ItemStackWrapper create(int typeId) {
 		return new SpigotItemStackWrapper(new ItemStack(Item.getById(typeId)));
 	}
@@ -80,7 +76,7 @@ public class SpigotItemStackWrapper extends ItemStackWrapper {
 
 	@Override
 	public void setDisplayName(String displayName) {
-		itemstack.c(displayName);
+		itemstack.g(displayName);
 	}
 
 	@Override
@@ -90,7 +86,11 @@ public class SpigotItemStackWrapper extends ItemStackWrapper {
 
 	@Override
 	public void setTag(NBTTagCompoundWrapper tag) {
-		itemstack.setTag(((SpigotNBTTagCompoundWrapper) tag).tag);
+		if (tag.isNull()) {
+			itemstack.setTag(null);
+		} else {
+			itemstack.setTag(((SpigotNBTTagCompoundWrapper) tag).tag);
+		}
 	}
 
 	@Override

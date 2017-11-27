@@ -10,10 +10,13 @@ import org.bukkit.inventory.ItemStack;
 
 import protocolsupport.api.chat.ChatAPI;
 import protocolsupport.api.chat.components.BaseComponent;
+import protocolsupport.api.chat.components.TextComponent;
 import protocolsupport.api.utils.Any;
+import protocolsupport.utils.Utils;
 import protocolsupport.zplatform.ServerPlatform;
 import protocolsupport.zplatform.itemstack.NBTTagCompoundWrapper;
 
+@SuppressWarnings("deprecation")
 public class HoverAction {
 
 	private final Type type;
@@ -38,7 +41,6 @@ public class HoverAction {
 		this(new EntityInfo(entity));
 	}
 
-	@SuppressWarnings("deprecation")
 	public HoverAction(EntityInfo entityinfo) {
 		this.type = Type.SHOW_ENTITY;
 		NBTTagCompoundWrapper compound = ServerPlatform.get().getWrapperFactory().createEmptyNBTCompound();
@@ -48,14 +50,16 @@ public class HoverAction {
 		this.value = compound.toString();
 	}
 
+	@Deprecated
 	public HoverAction(Achievement achievment) {
-		this.type = Type.SHOW_ACHIEVEMENT;
-		this.value = ServerPlatform.get().getMiscUtils().getAchievmentName(achievment);
+		this.type = Type.SHOW_TEXT;
+		this.value = ChatAPI.toJSON(new TextComponent("Achievement hover component is no longer supported"));
 	}
 
+	@Deprecated
 	public HoverAction(Statistic stat) {
-		this.type = Type.SHOW_ACHIEVEMENT;
-		this.value = ServerPlatform.get().getMiscUtils().getStatisticName(stat);
+		this.type = Type.SHOW_TEXT;
+		this.value = ChatAPI.toJSON(new TextComponent("Statistic hover component is no longer supported"));
 	}
 
 	public Type getType() {
@@ -76,18 +80,16 @@ public class HoverAction {
 		return ServerPlatform.get().getMiscUtils().createItemStackFromNBTTag(ServerPlatform.get().getWrapperFactory().createNBTCompoundFromJson(value));
 	}
 
-	@SuppressWarnings("deprecation")
 	public EntityInfo getEntity() {
 		validateAction(type, Type.SHOW_ENTITY);
 		NBTTagCompoundWrapper compound = ServerPlatform.get().getWrapperFactory().createNBTCompoundFromJson(value);
 		return new EntityInfo(EntityType.fromName(compound.getString("type")), UUID.fromString(compound.getString("id")), compound.getString("name"));
 	}
 
+	@Deprecated
 	public Any<Achievement, Statistic> getAchievmentOrStat() {
 		validateAction(type, Type.SHOW_ACHIEVEMENT);
-		Achievement achievement = ServerPlatform.get().getMiscUtils().getAchievmentByName(value);
-		Statistic stat = ServerPlatform.get().getMiscUtils().getStatisticByName(value);
-		return new Any<>(achievement, stat);
+		return new Any<>(null, null);
 	}
 
 	static void validateAction(Type current, Type expected) {
@@ -96,8 +98,15 @@ public class HoverAction {
 		}
 	}
 
+	@Override
+	public String toString() {
+		return Utils.toStringAllFields(this);
+	}
+
 	public static enum Type {
-		SHOW_TEXT, SHOW_ACHIEVEMENT, SHOW_ITEM, SHOW_ENTITY;
+		SHOW_TEXT, SHOW_ITEM, SHOW_ENTITY,
+		SHOW_ACHIEVEMENT //no longer exist
+		;
 	}
 
 	public static class EntityInfo {
@@ -125,6 +134,11 @@ public class HoverAction {
 
 		public String getName() {
 			return name;
+		}
+
+		@Override
+		public String toString() {
+			return Utils.toStringAllFields(this);
 		}
 	}
 

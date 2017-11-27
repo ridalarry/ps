@@ -4,6 +4,7 @@ import java.security.PublicKey;
 import java.util.List;
 
 import org.bukkit.Material;
+import org.bukkit.entity.Entity;
 
 import protocolsupport.api.chat.components.BaseComponent;
 import protocolsupport.api.events.ServerPingResponseEvent.ProtocolInfo;
@@ -47,6 +48,8 @@ public interface PlatformPacketFactory {
 	public Object createEmptyCustomPayloadPacket(String tag);
 
 	public Object createFakeJoinGamePacket();
+
+	public Object createEntityStatusPacket(Entity entity, int status);
 
 
 	public int getOutLoginDisconnectPacketId();
@@ -213,6 +216,14 @@ public interface PlatformPacketFactory {
 
 	public int getOutPlayVehicleMovePacketId();
 
+	public int getOutPlayUnlockRecipesPacketId();
+
+	public int getOutPlayAdvancementsPacketId();
+
+	public int getOutPlayAdvancementsTabPacketId();
+
+	public int getOutPlayCraftingGridConfirmPacketId();
+
 
 	public int getInHandshakeStartPacketId();
 
@@ -283,5 +294,11 @@ public interface PlatformPacketFactory {
 	public int getInPlayResourcePackStatusPacketId();
 
 	public int getInPlayTeleportAcceptPacketId();
+
+	public int getInPlayCraftingBookPacketId();
+
+	public int getInPlayPrepareCraftingGridPacketId();
+
+	public int getInPlayAdvancementTabPacketId();
 
 }

@@ -2,15 +2,12 @@ package protocolsupport.protocol.packet.middle.clientbound.play;
 
 import java.util.UUID;
 
-import gnu.trove.map.TIntObjectMap;
 import io.netty.buffer.ByteBuf;
-import protocolsupport.api.ProtocolType;
-import protocolsupport.api.ProtocolVersion;
 import protocolsupport.protocol.packet.middle.ClientBoundMiddlePacket;
 import protocolsupport.protocol.serializer.MiscSerializer;
 import protocolsupport.protocol.serializer.VarNumberSerializer;
-import protocolsupport.protocol.utils.datawatcher.DataWatcherDeserializer;
-import protocolsupport.protocol.utils.datawatcher.DataWatcherObject;
+import protocolsupport.protocol.typeremapper.id.IdSkipper;
+import protocolsupport.protocol.typeremapper.watchedentity.DataWatcherDataRemapper;
 import protocolsupport.protocol.utils.types.NetworkEntity;
 
 public abstract class MiddleSpawnLiving extends ClientBoundMiddlePacket {
@@ -25,7 +22,7 @@ public abstract class MiddleSpawnLiving extends ClientBoundMiddlePacket {
 	protected int motX;
 	protected int motY;
 	protected int motZ;
-	protected TIntObjectMap<DataWatcherObject<?>> metadata;
+	protected DataWatcherDataRemapper metadata = new DataWatcherDataRemapper();
 
 	@Override
 	public void readFromServerData(ByteBuf serverdata) {
@@ -42,12 +39,13 @@ public abstract class MiddleSpawnLiving extends ClientBoundMiddlePacket {
 		motX = serverdata.readShort();
 		motY = serverdata.readShort();
 		motZ = serverdata.readShort();
-		metadata = DataWatcherDeserializer.decodeData(serverdata, ProtocolVersion.getLatest(ProtocolType.PC));
+		metadata.init(serverdata, connection.getVersion(), cache.getLocale(), entity);
 	}
 
 	@Override
-	public void handle() {
+	public boolean postFromServerRead() {
 		cache.addWatchedEntity(entity);
+		return !IdSkipper.ENTITY.getTable(connection.getVersion()).shouldSkip(entity.getType());
 	}
 
 }

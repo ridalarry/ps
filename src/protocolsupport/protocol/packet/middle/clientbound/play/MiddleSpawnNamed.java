@@ -4,17 +4,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import gnu.trove.map.TIntObjectMap;
 import io.netty.buffer.ByteBuf;
-import protocolsupport.api.ProtocolType;
-import protocolsupport.api.ProtocolVersion;
 import protocolsupport.api.events.PlayerPropertiesResolveEvent.ProfileProperty;
 import protocolsupport.protocol.packet.middle.ClientBoundMiddlePacket;
 import protocolsupport.protocol.serializer.MiscSerializer;
 import protocolsupport.protocol.serializer.VarNumberSerializer;
 import protocolsupport.protocol.storage.NetworkDataCache;
-import protocolsupport.protocol.utils.datawatcher.DataWatcherDeserializer;
-import protocolsupport.protocol.utils.datawatcher.DataWatcherObject;
+import protocolsupport.protocol.typeremapper.watchedentity.DataWatcherDataRemapper;
 import protocolsupport.protocol.utils.types.NetworkEntity;
 
 public abstract class MiddleSpawnNamed extends ClientBoundMiddlePacket {
@@ -27,7 +23,7 @@ public abstract class MiddleSpawnNamed extends ClientBoundMiddlePacket {
 	protected int yaw;
 	protected int pitch;
 	protected List<ProfileProperty> properties;
-	protected TIntObjectMap<DataWatcherObject<?>> metadata;
+	protected DataWatcherDataRemapper metadata = new DataWatcherDataRemapper();
 
 	@Override
 	public void readFromServerData(ByteBuf serverdata) {
@@ -39,11 +35,11 @@ public abstract class MiddleSpawnNamed extends ClientBoundMiddlePacket {
 		z = serverdata.readDouble();
 		yaw = serverdata.readUnsignedByte();
 		pitch = serverdata.readUnsignedByte();
-		metadata = DataWatcherDeserializer.decodeData(serverdata, ProtocolVersion.getLatest(ProtocolType.PC));
+		metadata.init(serverdata, connection.getVersion(), cache.getLocale(), entity);
 	}
 
 	@Override
-	public void handle() {
+	public boolean postFromServerRead() {
 		cache.addWatchedEntity(entity);
 		NetworkDataCache.PlayerListEntry entry = cache.getPlayerListEntry(entity.getUUID());
 		if (entry != null) {
@@ -53,6 +49,7 @@ public abstract class MiddleSpawnNamed extends ClientBoundMiddlePacket {
 			name = "Unknown";
 			properties = Collections.emptyList();
 		}
+		return true;
 	}
 
 }

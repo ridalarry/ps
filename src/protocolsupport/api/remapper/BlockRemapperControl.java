@@ -5,9 +5,17 @@ import org.bukkit.Material;
 
 import protocolsupport.api.ProtocolVersion;
 import protocolsupport.protocol.typeremapper.id.IdRemapper;
-import protocolsupport.protocol.typeremapper.id.RemappingTable.ArrayBasedIdRemappingTable;
+import protocolsupport.protocol.typeremapper.utils.RemappingTable.ArrayBasedIdRemappingTable;
+import protocolsupport.protocol.utils.minecraftdata.MinecraftData;
 
 public class BlockRemapperControl {
+
+	/**
+	 * Resets all block remaps to default ones
+	 */
+	public static void resetToDefault() {
+		IdRemapper.BLOCK.applyDefaultRemaps();
+	}
 
 	private final ArrayBasedIdRemappingTable table;
 
@@ -32,7 +40,7 @@ public class BlockRemapperControl {
 	 * @param to item id to which remap will occur
 	 */
 	public void setRemap(int from, int to) {
-		for (int i = 0; i < 16; i++) {
+		for (int i = 0; i < MinecraftData.BLOCK_DATA_MAX; i++) {
 			setRemap(from, i, to, i);
 		}
 	}
@@ -56,7 +64,7 @@ public class BlockRemapperControl {
 	 */
 	@Deprecated
 	public int getRemap(int id) {
-		return id(table.getRemap(combinedId(id, 0)));
+		return MinecraftData.getBlockIdFromState(table.getRemap(MinecraftData.getBlockStateFromIdAndData(id, 0)));
 	}
 
 	/**
@@ -65,12 +73,14 @@ public class BlockRemapperControl {
 	 * @return remap for specified material and data
 	 */
 	public MaterialAndData getRemap(MaterialAndData entry) {
-		int combinedId = table.getRemap(combinedId(entry.getId(), entry.getData()));
-		return new MaterialAndData(id(combinedId), data(combinedId));
+		Validate.inclusiveBetween(0, MinecraftData.BLOCK_ID_MAX, entry.getId());
+		Validate.inclusiveBetween(0, MinecraftData.BLOCK_DATA_MAX, entry.getData());
+		int combinedId = table.getRemap(MinecraftData.getBlockStateFromIdAndData(entry.getId(), entry.getData()));
+		return new MaterialAndData(MinecraftData.getBlockIdFromState(combinedId), MinecraftData.getBlockDataFromState(combinedId));
 	}
 
 	/**
-	 * Sets remap for specified mateiral and data
+	 * Sets remap for specified material and data
 	 * @param from {@link MaterialAndData} which will be remapped
 	 * @param to {@link MaterialAndData} to which remap will occur
 	 */
@@ -79,7 +89,7 @@ public class BlockRemapperControl {
 	}
 
 	/**
-	 * Sets remap for specified mateiral and data
+	 * Sets remap for specified material and data
 	 * @param matFrom {@link Material} which will be remapped
 	 * @param dataFrom item data which will be remapped
 	 * @param matTo {@link Material} to which remap will occur
@@ -91,14 +101,18 @@ public class BlockRemapperControl {
 	}
 
 	/**
-	 * Sets remap for specified mateiral and data
+	 * Sets remap for specified material and data
 	 * @param idFrom item id which will be remapped
 	 * @param dataFrom item data which will be remapped
 	 * @param idTo item id to which remap will occur
 	 * @param dataTo item data to which remap will occur
 	 */
 	public void setRemap(int idFrom, int dataFrom, int idTo, int dataTo) {
-		table.setRemap(combinedId(idFrom, dataFrom), combinedId(idTo, dataTo));
+		Validate.inclusiveBetween(0, MinecraftData.BLOCK_ID_MAX, idFrom);
+		Validate.inclusiveBetween(0, MinecraftData.BLOCK_DATA_MAX, dataFrom);
+		Validate.inclusiveBetween(0, MinecraftData.BLOCK_ID_MAX, idTo);
+		Validate.inclusiveBetween(0, MinecraftData.BLOCK_DATA_MAX, dataTo);
+		table.setRemap(MinecraftData.getBlockStateFromIdAndData(idFrom, dataFrom), MinecraftData.getBlockStateFromIdAndData(idTo, dataTo));
 	}
 
 	public static class MaterialAndData {
@@ -127,18 +141,6 @@ public class BlockRemapperControl {
 		public int getData() {
 			return data;
 		}
-	}
-
-	private static int combinedId(int id, int data) {
-		return (id << 4) | (data & 0xF);
-	}
-
-	private static int id(int combinedId) {
-		return combinedId >> 4;
-	}
-
-	private static int data(int combinedId) {
-		return combinedId & 0xF;
 	}
 
 }

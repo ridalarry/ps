@@ -1,9 +1,8 @@
 package protocolsupport.protocol.packet.handler;
 
-import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -11,18 +10,18 @@ import org.bukkit.event.player.PlayerLoginEvent;
 
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
+import protocolsupport.api.ProtocolType;
 import protocolsupport.api.ProtocolVersion;
 import protocolsupport.api.events.PlayerLoginFinishEvent;
 import protocolsupport.api.events.PlayerSyncLoginEvent;
+import protocolsupport.api.utils.NetworkState;
 import protocolsupport.protocol.ConnectionImpl;
 import protocolsupport.protocol.pipeline.ChannelHandlers;
-import protocolsupport.protocol.pipeline.timeout.SimpleReadTimeoutHandler;
+import protocolsupport.protocol.pipeline.common.SimpleReadTimeoutHandler;
 import protocolsupport.protocol.utils.authlib.GameProfile;
 import protocolsupport.zplatform.ServerPlatform;
 import protocolsupport.zplatform.network.NetworkManagerWrapper;
-import protocolsupport.zplatform.network.NetworkState;
 
-//TODO: Generics for JoinData
 public abstract class AbstractLoginListenerPlay implements IHasProfile {
 
 	protected final NetworkManagerWrapper networkManager;
@@ -48,16 +47,28 @@ public abstract class AbstractLoginListenerPlay implements IHasProfile {
 			return;
 		}
 
-		// send login success
+		//send login success and wait for finish
+		CountDownLatch waitpacketsend = new CountDownLatch(1);
 		networkManager.sendPacket(ServerPlatform.get().getPacketFactory().createLoginSuccessPacket(profile), new GenericFutureListener<Future<? super Void>>() {
 			@Override
-			public void operationComplete(Future<? super Void> future) throws Exception {
-				networkManager.setProtocol(NetworkState.PLAY);
+			public void operationComplete(Future<? super Void> p0) throws Exception {
+				waitpacketsend.countDown();
 			}
 		});
-		// tick connection keep now
+		try {
+			if (!waitpacketsend.await(5, TimeUnit.SECONDS)) {
+				disconnect("Timeout while waiting for login success send");
+				return;
+			}
+		} catch (InterruptedException e) {
+			disconnect("Exception while waiting for login success send");
+			return;
+		}
+		//set network state to game
+		networkManager.setProtocol(NetworkState.PLAY);
+		//tick connection keep now
 		keepConnection();
-		// now fire login event
+		//now fire login event
 		PlayerLoginFinishEvent event = new PlayerLoginFinishEvent(ConnectionImpl.getFromChannel(networkManager.getChannel()), profile.getName(), profile.getUUID(), onlineMode);
 		Bukkit.getPluginManager().callEvent(event);
 		if (event.isLoginDenied()) {
@@ -72,6 +83,10 @@ public abstract class AbstractLoginListenerPlay implements IHasProfile {
 	protected int keepAliveTicks = 1;
 
 	public void tick() {
+		if (!ServerPlatform.get().getMiscUtils().isRunning()) {
+			disconnect(org.spigotmc.SpigotConfig.restartMessage);
+			return;
+		}
 		if ((keepAliveTicks++ % 80) == 0) {
 			keepConnection();
 		}
@@ -81,16 +96,13 @@ public abstract class AbstractLoginListenerPlay implements IHasProfile {
 	}
 
 	private void tryJoin() {
-		//find players with same uuid
-		List<Player> toKick = Bukkit.getOnlinePlayers().stream().filter(player -> player.getUniqueId().equals(profile.getUUID())).collect(Collectors.toList());
-		//kick them
-		if (!toKick.isEmpty()) {
-			toKick.forEach(player -> player.kickPlayer("You logged in from another location"));
-			return;
-		}
-
 		//no longer attempt to join
 		ready = false;
+
+		//kick players with same uuid
+		Bukkit.getOnlinePlayers().stream()
+		.filter(player -> player.getUniqueId().equals(profile.getUUID()))
+		.forEach(player -> player.kickPlayer("You logged in from another location"));
 
 		//get player
 		JoinData joindata = createJoinData();
@@ -121,10 +133,10 @@ public abstract class AbstractLoginListenerPlay implements IHasProfile {
 	}
 
 	protected void keepConnection() {
-		// custom payload does nothing on a client when sent with invalid tag,
-		// but it resets client readtimeouthandler, and that is exactly what we need
+		//custom payload does nothing on a client when sent with invalid tag,
+		//but it resets client readtimeouthandler, and that is exactly what we need
 		networkManager.sendPacket(ServerPlatform.get().getPacketFactory().createEmptyCustomPayloadPacket("PS|KeepAlive"));
-		// we also need to reset server readtimeouthandler (may be null if netty already teared down the pipeline)
+		//we also need to reset server readtimeouthandler (may be null if netty already teared down the pipeline)
 		SimpleReadTimeoutHandler timeouthandler = ChannelHandlers.getTimeoutHandler(networkManager.getChannel().pipeline());
 		if (timeouthandler != null) {
 			timeouthandler.setLastRead();
@@ -138,10 +150,11 @@ public abstract class AbstractLoginListenerPlay implements IHasProfile {
 	public void disconnect(final String s) {
 		try {
 			Bukkit.getLogger().info("Disconnecting " + getConnectionRepr() + ": " + s);
-			if (ConnectionImpl.getFromChannel(networkManager.getChannel()).getVersion().isBetween(ProtocolVersion.MINECRAFT_1_7_5, ProtocolVersion.MINECRAFT_1_7_10)) {
-				// first send join game that will make client actually switch to game state
+			ProtocolVersion version = ConnectionImpl.getFromChannel(networkManager.getChannel()).getVersion();
+			if ((version.getProtocolType() == ProtocolType.PC) && version.isBetween(ProtocolVersion.MINECRAFT_1_7_5, ProtocolVersion.MINECRAFT_1_7_10)) {
+				//first send join game that will make client actually switch to game state
 				networkManager.sendPacket(ServerPlatform.get().getPacketFactory().createFakeJoinGamePacket());
-				// send disconnect with a little delay
+				//send disconnect with a little delay
 				networkManager.getChannel().eventLoop().schedule(() -> disconnect0(s), 50, TimeUnit.MILLISECONDS);
 			} else {
 				disconnect0(s);

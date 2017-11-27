@@ -1,23 +1,17 @@
 package protocolsupport.protocol.utils.i18n;
 
-import java.text.MessageFormat;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class I18N {
 
 	private final HashMap<String, String> i18n = new HashMap<>();
 
 	private final String lang;
-	public I18N(String locale) {
+	public I18N(String locale, List<String> lines) {
 		this.lang = locale;
-	}
-
-	public String getLang() {
-		return lang;
-	}
-
-	public void load(List<String> lines) {
 		for (String line : lines) {
 			if (line.isEmpty()) {
 				continue;
@@ -31,17 +25,18 @@ public class I18N {
 			}
 			i18n.put(split[0], split[1]);
 		}
-		String filelang = getI18N("language.code");
-		if (filelang == null) {
-			throw new IllegalArgumentException("Invalid language: code not found");
-		}
-		if (!filelang.equalsIgnoreCase(lang)) {
-			throw new IllegalArgumentException(MessageFormat.format("Invalid language: expected {0} got {1}", lang, filelang));
-		}
 	}
 
-	public String getI18N(String key) {
-		return i18n.getOrDefault(key, key);
+	public String getLang() {
+		return lang;
+	}
+
+	public Set<String> getKeys() {
+		return new HashSet<>(i18n.keySet());
+	}
+
+	public String getTranslationString(String key) {
+		return i18n.get(key);
 	}
 
 }

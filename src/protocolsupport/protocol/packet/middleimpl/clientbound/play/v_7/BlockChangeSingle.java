@@ -7,18 +7,20 @@ import protocolsupport.protocol.packet.middleimpl.ClientBoundPacketData;
 import protocolsupport.protocol.serializer.PositionSerializer;
 import protocolsupport.protocol.serializer.VarNumberSerializer;
 import protocolsupport.protocol.typeremapper.id.IdRemapper;
+import protocolsupport.protocol.utils.minecraftdata.MinecraftData;
 import protocolsupport.utils.recyclable.RecyclableCollection;
 import protocolsupport.utils.recyclable.RecyclableSingletonList;
 
 public class BlockChangeSingle extends MiddleBlockChangeSingle {
 
 	@Override
-	public RecyclableCollection<ClientBoundPacketData> toData(ProtocolVersion version) {
+	public RecyclableCollection<ClientBoundPacketData> toData() {
+		ProtocolVersion version = connection.getVersion();
 		ClientBoundPacketData serializer = ClientBoundPacketData.create(ClientBoundPacket.PLAY_BLOCK_CHANGE_SINGLE_ID, version);
 		PositionSerializer.writeLegacyPositionB(serializer, position);
 		id = IdRemapper.BLOCK.getTable(version).getRemap(id);
-		VarNumberSerializer.writeVarInt(serializer, id >> 4);
-		serializer.writeByte(id & 0xF);
+		VarNumberSerializer.writeVarInt(serializer, MinecraftData.getBlockIdFromState(id));
+		serializer.writeByte(MinecraftData.getBlockDataFromState(id));
 		return RecyclableSingletonList.create(serializer);
 	}
 

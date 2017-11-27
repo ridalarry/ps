@@ -3,15 +3,19 @@ package protocolsupport.api;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.EnumMap;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.Validate;
 
 import gnu.trove.map.hash.TIntObjectHashMap;
+import protocolsupport.utils.Utils;
 
 public enum ProtocolVersion {
 
-	MINECRAFT_FUTURE(-1, new OrderId(ProtocolType.PC, 18)),
-	MINECRAFT_1_12(327, new OrderId(ProtocolType.PC, 17), "1.12-snapshot"),
+	MINECRAFT_FUTURE(-1, new OrderId(ProtocolType.PC, 20)),
+	MINECRAFT_1_12_2(340, new OrderId(ProtocolType.PC, 19), "1.12.2"),
+	MINECRAFT_1_12_1(338, new OrderId(ProtocolType.PC, 18), "1.12.1"),
+	MINECRAFT_1_12(335, new OrderId(ProtocolType.PC, 17), "1.12"),
 	MINECRAFT_1_11_1(316, new OrderId(ProtocolType.PC, 16), "1.11.2"),
 	MINECRAFT_1_11(315, new OrderId(ProtocolType.PC, 15), "1.11"),
 	MINECRAFT_1_10(210, new OrderId(ProtocolType.PC, 14), "1.10"),
@@ -45,6 +49,30 @@ public enum ProtocolVersion {
 		this.name = name;
 	}
 
+	private static final ProtocolVersion[] allSupported = Arrays.stream(ProtocolVersion.values())
+	.filter(ProtocolVersion::isSupported)
+	.collect(Collectors.toList())
+	.toArray(new ProtocolVersion[0]);
+
+	private static final TIntObjectHashMap<ProtocolVersion> byProtocolId = new TIntObjectHashMap<>();
+	static {
+		Arrays.stream(ProtocolVersion.getAllSupported()).forEach(version -> byProtocolId.put(version.id, version));
+	}
+
+	private static final EnumMap<ProtocolType, ProtocolVersion[]> byOrderId = new EnumMap<>(ProtocolType.class);
+	static {
+		for (ProtocolType type : ProtocolType.values()) {
+			if (type != ProtocolType.UNKNOWN) {
+				byOrderId.put(type,
+					Arrays.stream(ProtocolVersion.values())
+					.filter(version -> version.getProtocolType() == type)
+					.sorted((o1, o2) -> o1.orderId.compareTo(o2.orderId))
+					.toArray(size -> new ProtocolVersion[size])
+				);
+			}
+		}
+	}
+
 	/**
 	 * Return protocol type of this protocol version
 	 * @return {@link ProtocolType} of this protocol version
@@ -62,8 +90,8 @@ public enum ProtocolVersion {
 	}
 
 	/**
-	 * Returns user friendly version name
-	 * Notice: This name can change, so it shouldn't be used as a key anywhere
+	 * Returns user friendly version name <br>
+	 * This name can change, so it shouldn't be used as a key anywhere
 	 * @return user friendly version name
 	 */
 	public String getName() {
@@ -71,7 +99,7 @@ public enum ProtocolVersion {
 	}
 
 	/**
-	 * Returns if this version is supported as game version (i.e.: player can join and play on the server)
+	 * Returns if this version is supported as game version (i.e.: player can possibly join and play on the server)
 	 * @return true if this protocol version is supported
 	 */
 	public boolean isSupported() {
@@ -122,24 +150,17 @@ public enum ProtocolVersion {
 	 * Returns if the game version used by this protocol released in between (or is the same) of other game versions used by others protocol versions
 	 * @param one one protocol version
 	 * @param another another protocol version
-	 * @return true if game version is released before (or is the same) the game version used by another protocol version
+	 * @return true if the game version used by this protocol released in between (or is the same) of other game versions used by others protocol versions
 	 * @throws IllegalArgumentException if protocol versions use different protocol types
 	 */
 	public boolean isBetween(ProtocolVersion one, ProtocolVersion another) {
 		return (isAfterOrEq(one) && isBeforeOrEq(another)) || (isBeforeOrEq(one) && isAfterOrEq(another));
 	}
 
-	private static final TIntObjectHashMap<ProtocolVersion> byProtocolId = new TIntObjectHashMap<>();
-	static {
-		Arrays.stream(ProtocolVersion.values())
-		.filter(ProtocolVersion::isSupported)
-		.forEach(version -> byProtocolId.put(version.id, version));
-	}
-
 	/**
 	 * Returns protocol version by network game id
 	 * @param id network version id
-	 * @return Returns protocol version by network game id or UNKNOWN if not found
+	 * @return Returns protocol version by network game id or {@link ProtocolVersion#UNKNOWN} if not found
 	 * @deprecated network version ids may be the same for different protocol versions
 	 */
 	@Deprecated
@@ -148,57 +169,31 @@ public enum ProtocolVersion {
 		return version != null ? version : UNKNOWN;
 	}
 
-	private static final EnumMap<ProtocolType, ProtocolVersion[]> byOrderId = new EnumMap<>(ProtocolType.class);
-	static {
-		for (ProtocolType type : ProtocolType.values()) {
-			if (type != ProtocolType.UNKNOWN) {
-				byOrderId.put(type,
-					Arrays.stream(ProtocolVersion.values())
-					.filter(version -> version.getProtocolType() == type)
-					.sorted((o1, o2) -> o1.orderId.compareTo(o2.orderId))
-					.toArray(size -> new ProtocolVersion[size])
-				);
-			}
-		}
-	}
-
 	/**
-	 * Returns protocol version that is used by the game version released after game version used by this protocol
+	 * Returns protocol version that is used by the game version released after game version used by this protocol <br>
 	 * Returns null if next game version doesn't exist
 	 * @return protocol version that is used by the game version released after game version used by this protocol
 	 * @throws IllegalArgumentException if protocol type is UNKNOWN
 	 */
 	public ProtocolVersion next() {
 		Validate.isTrue(getProtocolType() != ProtocolType.UNKNOWN, "Can't get next version for unknown protocol type");
-		ProtocolVersion[] versions = byOrderId.get(getProtocolType());
-		int nextVersionOrderId = orderId.id + 1;
-		if (nextVersionOrderId < versions.length) {
-			return versions[nextVersionOrderId];
-		} else {
-			return null;
-		}
+		return Utils.getFromArrayOrNull(byOrderId.get(getProtocolType()), orderId.id + 1);
 	}
 
 	/**
-	 * Returns protocol version that is used by the game version released before game version used by this protocol
+	 * Returns protocol version that is used by the game version released before game version used by this protocol <br>
 	 * Returns null if previous game version doesn't exist
 	 * @return protocol version that is used by the game version released before game version used by this protocol
 	 * @throws IllegalArgumentException if protocol type is UNKNOWN
 	 */
 	public ProtocolVersion previous() {
 		Validate.isTrue(getProtocolType() != ProtocolType.UNKNOWN, "Can't get next version for unknown protocol type");
-		ProtocolVersion[] versions = byOrderId.get(getProtocolType());
-		int previousVersionOrderId = orderId.id - 1;
-		if (previousVersionOrderId >= 0) {
-			return versions[previousVersionOrderId];
-		} else {
-			return null;
-		}
+		return Utils.getFromArrayOrNull(byOrderId.get(getProtocolType()), orderId.id - 1);
 	}
 
 	/**
-	 * Returns all protocol versions that are between specified ones (inclusive)
-	 * Throws {@link IllegalArgumentException} if protocol versions types are not the same or one of the types is UNKNOWN
+	 * Returns all protocol versions that are between specified ones (inclusive) <br>
+	 * Throws {@link IllegalArgumentException} if protocol versions types are not the same or one of the types is {@link ProtocolType#UNKNOWN}
 	 * @param one one protocol version
 	 * @param another one protocol version
 	 * @return all protocol versions that are between specified ones (inclusive)
@@ -218,6 +213,56 @@ public enum ProtocolVersion {
 	}
 
 	/**
+	 * Returns all protocol versions that are after specified one (inclusive)
+	 * @param version protocol version
+	 * @return all protocol versions that are after specified one (including this one)
+	 * @throws IllegalArgumentException  if getAllBetween(version, getLatest(version.getType())) throws one
+	 */
+	public static ProtocolVersion[] getAllAfterI(ProtocolVersion version) {
+		return getAllBetween(version, getLatest(version.getProtocolType()));
+	}
+
+	/**
+	 * Returns all protocol versions that are after specified one (exclusive)
+	 * @param version protocol version
+	 * @return all protocol versions that are after specified one  (exclusive) or empty array if no protocol versions exist after this one
+	 * @throws IllegalArgumentException  if getAllBetween(version, getLatest(version.getType()))
+	 */
+	public static ProtocolVersion[] getAllAfterE(ProtocolVersion version) {
+		ProtocolVersion next = version.next();
+		if ((next == null) || !next.isSupported()) {
+			return new ProtocolVersion[0];
+		} else {
+			return getAllAfterI(next);
+		}
+	}
+
+	/**
+	 * Returns all protocol versions that are before specified one (inclusive)
+	 * @param version protocol version
+	 * @return all protocol versions that are before specified one (including this one)
+	 * @throws IllegalArgumentException if getAllBetween(getOldest(version.getType()), version) throws one
+	 */
+	public static ProtocolVersion[] getAllBeforeI(ProtocolVersion version) {
+		return getAllBetween(getOldest(version.getProtocolType()), version);
+	}
+
+	/**
+	 * Returns all protocol versions that are before specified one (exclusive)
+	 * @param version protocol version
+	 * @return all protocol versions that are before specified one  (exclusive) or empty array if no protocol versions exist after this one
+	 * @throws IllegalArgumentException  if getAllBetween(version, getOldest(version.getType()))
+	 */
+	public static ProtocolVersion[] getAllBeforeE(ProtocolVersion version) {
+		ProtocolVersion prev = version.previous();
+		if ((prev == null) || !prev.isSupported()) {
+			return new ProtocolVersion[0];
+		} else {
+			return getAllBeforeI(prev);
+		}
+	}
+
+	/**
 	 * Returns latest supported protocol version for specified protocol type
 	 * @param type protocol type
 	 * @return latest supported protocol version for specified protocol type
@@ -226,7 +271,7 @@ public enum ProtocolVersion {
 	public static ProtocolVersion getLatest(ProtocolType type) {
 		switch (type) {
 			case PC: {
-				return MINECRAFT_1_12;
+				return MINECRAFT_1_12_2;
 			}
 			default: {
 				throw new IllegalArgumentException(MessageFormat.format("No supported versions for protocol type {0}", type));
@@ -252,6 +297,14 @@ public enum ProtocolVersion {
 	}
 
 	/**
+	 * Returns all supported protocol versions
+	 * @return all supported protocol versions
+	 */
+	public static ProtocolVersion[] getAllSupported() {
+		return allSupported.clone();
+	}
+
+	/**
 	 * Returns all protocol versions that are after specified one (inclusive)
 	 * @param version protocol version
 	 * @return all protocol versions that are after specified one  (inclusive)
@@ -260,7 +313,7 @@ public enum ProtocolVersion {
 	 */
 	@Deprecated
 	public static ProtocolVersion[] getAllAfter(ProtocolVersion version) {
-		return getAllBetween(version, getLatest(version.getProtocolType()));
+		return getAllAfterI(version);
 	}
 
 	/**
@@ -272,7 +325,7 @@ public enum ProtocolVersion {
 	 */
 	@Deprecated
 	public static ProtocolVersion[] getAllBefore(ProtocolVersion version) {
-		return getAllBetween(getOldest(version.getProtocolType()), version);
+		return getAllBeforeI(version);
 	}
 
 	/**
@@ -309,7 +362,7 @@ public enum ProtocolVersion {
 		public int compareTo(OrderId o) {
 			Validate.isTrue(this.type != ProtocolType.UNKNOWN, "Can't compare unknown protocol type");
 			Validate.isTrue(o.type != ProtocolType.UNKNOWN, "Can't compare with unknown protocol type");
-			Validate.isTrue(this.type == o.type, MessageFormat.format("Cant compare order from different types: this - {0}, other - {1}", type, o.type));
+			Validate.isTrue(this.type == o.type, "Cant compare order from different types");
 			return Integer.compare(id, o.id);
 		}
 

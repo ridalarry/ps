@@ -1,19 +1,20 @@
 package protocolsupport.protocol.packet.middleimpl.clientbound.play.v_8;
 
 import protocolsupport.api.ProtocolVersion;
-import protocolsupport.protocol.legacyremapper.LegacyRelMoveConverter;
-import protocolsupport.protocol.legacyremapper.LegacyRelMoveConverter.RelMove;
 import protocolsupport.protocol.packet.ClientBoundPacket;
 import protocolsupport.protocol.packet.middle.clientbound.play.MiddleEntityRelMove;
 import protocolsupport.protocol.packet.middleimpl.ClientBoundPacketData;
 import protocolsupport.protocol.serializer.VarNumberSerializer;
+import protocolsupport.protocol.typeremapper.legacy.LegacyRelMoveConverter;
+import protocolsupport.protocol.typeremapper.legacy.LegacyRelMoveConverter.RelMove;
 import protocolsupport.utils.recyclable.RecyclableArrayList;
 import protocolsupport.utils.recyclable.RecyclableCollection;
 
 public class EntityRelMove extends MiddleEntityRelMove {
 
 	@Override
-	public RecyclableCollection<ClientBoundPacketData> toData(ProtocolVersion version) {
+	public RecyclableCollection<ClientBoundPacketData> toData() {
+		ProtocolVersion version = connection.getVersion();
 		int relMoveX = relX / 128;
 		int relMoveY = relY / 128;
 		int relMoveZ = relZ / 128;

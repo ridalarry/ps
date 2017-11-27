@@ -1,10 +1,14 @@
 name: ProtocolSupport
 main: protocolsupport.ProtocolSupport
-version: 4.26.dev
-author: _Shevchik_
+version: 4.29-dev
+authors:
+- _Shevchik_
+- 7kasper
+- MrPowerGamerBR
+- gdude2002
 load: STARTUP
 commands:
   protocolsupport:
     description: All ProtocolSupport commands
     aliases: ps
-    usage: Invalid command
+    usage: '/protocolsupport help'

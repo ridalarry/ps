@@ -6,20 +6,12 @@ import protocolsupport.protocol.utils.datawatcher.DataWatcherObject;
 
 public class DataWatcherObjectShort extends DataWatcherObject<Short> {
 
-	public DataWatcherObjectShort() {
-	}
-
 	public DataWatcherObjectShort(short s) {
 		value = s;
 	}
 
 	@Override
-	public void readFromStream(ByteBuf from, ProtocolVersion version) {
-		value = from.readShort();
-	}
-
-	@Override
-	public void writeToStream(ByteBuf to, ProtocolVersion version) {
+	public void writeToStream(ByteBuf to, ProtocolVersion version, String locale) {
 		to.writeShort(value);
 	}
 

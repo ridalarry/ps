@@ -21,7 +21,7 @@ public class SpigotPacketEncoder extends MessageToByteEncoder<Packet<PacketListe
 	private final PacketDataSerializer nativeSerializer = new PacketDataSerializer(wrapper);
 
 	@Override
-	protected void encode(ChannelHandlerContext ctx, Packet<PacketListener> packet, ByteBuf data) {
+	protected void encode(ChannelHandlerContext ctx, Packet<PacketListener> packet, ByteBuf data) throws Exception {
 		EnumProtocol currentProtocol = ctx.channel().attr(NetworkManager.c).get();
 		final Integer packetId = currentProtocol.a(EnumProtocolDirection.CLIENTBOUND, packet);
 		if (packetId == null) {

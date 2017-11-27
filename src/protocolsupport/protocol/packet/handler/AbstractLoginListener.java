@@ -1,54 +1,50 @@
 package protocolsupport.protocol.packet.handler;
 
-import java.security.PrivateKey;
-import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.UUID;
-import java.util.concurrent.Executor;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-
-import javax.crypto.SecretKey;
-
-import org.apache.commons.lang3.Validate;
-import org.bukkit.Bukkit;
-
 import com.google.common.base.Charsets;
-
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelPipeline;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
+import org.apache.commons.lang3.Validate;
+import org.bukkit.Bukkit;
 import protocolsupport.ProtocolSupport;
+import protocolsupport.api.Connection;
+import protocolsupport.api.ProtocolType;
+import protocolsupport.api.ProtocolVersion;
 import protocolsupport.api.events.PlayerLoginStartEvent;
 import protocolsupport.api.events.PlayerPropertiesResolveEvent.ProfileProperty;
 import protocolsupport.protocol.ConnectionImpl;
 import protocolsupport.protocol.utils.authlib.GameProfile;
 import protocolsupport.utils.Utils;
-import protocolsupport.utils.Utils.Converter;
 import protocolsupport.zplatform.ServerPlatform;
 import protocolsupport.zplatform.network.NetworkManagerWrapper;
 
+import javax.crypto.SecretKey;
+import java.security.PrivateKey;
+import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.UUID;
+import java.util.concurrent.*;
+import java.util.logging.Level;
+
 public abstract class AbstractLoginListener implements IHasProfile {
 
-	private static final int loginThreads = Utils.getJavaPropertyValue("loginthreads", Integer.MAX_VALUE, Converter.STRING_TO_INT);
-	private static final int loginThreadKeepAlive = Utils.getJavaPropertyValue("loginthreadskeepalive", 60, Converter.STRING_TO_INT);
+	private static final int loginThreadKeepAlive = Utils.getJavaPropertyValue("loginthreadskeepalive", 60, Integer::parseInt);
 
-	public static void init() {
-		ProtocolSupport.logInfo(MessageFormat.format("Login threads max count: {0}, keep alive time: {1}", loginThreads, loginThreadKeepAlive));
+	static {
+		ProtocolSupport.logInfo(MessageFormat.format("Login threads keep alive time: {0}", loginThreadKeepAlive));
 	}
 
 	private static final Executor loginprocessor = new ThreadPoolExecutor(
-		1, loginThreads,
+		1, Integer.MAX_VALUE,
 		loginThreadKeepAlive, TimeUnit.SECONDS,
 		new LinkedBlockingQueue<Runnable>(),
 		r -> new Thread(r, "LoginProcessingThread")
 	);
 
 	protected final NetworkManagerWrapper networkManager;
+	protected final Connection connection;
 	protected final String hostname;
 	protected final byte[] randomBytes = new byte[4];
 	protected int loginTicks;
@@ -62,6 +58,7 @@ public abstract class AbstractLoginListener implements IHasProfile {
 
 	public AbstractLoginListener(NetworkManagerWrapper networkmanager, String hostname) {
 		this.networkManager = networkmanager;
+		this.connection = ConnectionImpl.getFromChannel(networkmanager.getChannel());
 		this.hostname = hostname;
 		ThreadLocalRandom.current().nextBytes(randomBytes);
 	}
@@ -105,10 +102,6 @@ public abstract class AbstractLoginListener implements IHasProfile {
 		return UUID.nameUUIDFromBytes(("OfflinePlayer:" + profile.getName()).getBytes(Charsets.UTF_8));
 	}
 
-	protected abstract boolean hasCompression();
-
-	protected abstract void enableCompression(int compressionLevel);
-
 	public String getConnectionRepr() {
 		return (profile != null) ? (profile + " (" + networkManager.getAddress() + ")") : networkManager.getAddress().toString();
 	}
@@ -123,7 +116,7 @@ public abstract class AbstractLoginListener implements IHasProfile {
 					profile = new GameProfile(null, name);
 
 					PlayerLoginStartEvent event = new PlayerLoginStartEvent(
-						ConnectionImpl.getFromChannel(networkManager.getChannel()),
+						connection,
 						profile.getName(),
 						isOnlineMode,
 						useOnlineModeUUID,
@@ -142,7 +135,7 @@ public abstract class AbstractLoginListener implements IHasProfile {
 						state = LoginState.KEY;
 						networkManager.sendPacket(ServerPlatform.get().getPacketFactory().createLoginEncryptionBeginPacket(ServerPlatform.get().getMiscUtils().getEncryptionKeyPair().getPublic(), randomBytes));
 					} else {
-						new PlayerLookupUUID(AbstractLoginListener.this, isOnlineMode).run();
+						new PlayerAuthenticationTask(AbstractLoginListener.this, isOnlineMode).run();
 					}
 				} catch (Throwable t) {
 					AbstractLoginListener.this.disconnect("Error occured while logging in");
@@ -175,7 +168,7 @@ public abstract class AbstractLoginListener implements IHasProfile {
 					}
 					loginKey = encryptionpakcet.getSecretKey(privatekey);
 					enableEncryption(loginKey);
-					new PlayerLookupUUID(AbstractLoginListener.this, isOnlineMode).run();
+					new PlayerAuthenticationTask(AbstractLoginListener.this, isOnlineMode).run();
 				} catch (Throwable t) {
 					AbstractLoginListener.this.disconnect("Error occured while logging in");
 					if (ServerPlatform.get().getMiscUtils().isDebugging()) {
@@ -186,7 +179,10 @@ public abstract class AbstractLoginListener implements IHasProfile {
 		});
 	}
 
-	protected abstract void enableEncryption(SecretKey key);
+	protected void enableEncryption(SecretKey key) {
+		ChannelPipeline pipeline = networkManager.getChannel().pipeline();
+		ServerPlatform.get().getMiscUtils().enableEncryption(pipeline, key, isFullEncryption(connection.getVersion()));
+	}
 
 	@SuppressWarnings("unchecked")
 	public void setReadyToAccept() {
@@ -202,15 +198,15 @@ public abstract class AbstractLoginListener implements IHasProfile {
 			newProfile.getProperties().putAll(profile.getProperties());
 			profile = newProfile;
 		}
-		if (hasCompression()) {
-			final int threshold = ServerPlatform.get().getMiscUtils().getCompressionThreshold();
+		if (hasCompression(connection.getVersion())) {
+			int threshold = ServerPlatform.get().getMiscUtils().getCompressionThreshold();
 			if (threshold >= 0) {
 				this.networkManager.sendPacket(
 					ServerPlatform.get().getPacketFactory().createSetCompressionPacket(threshold),
 					new ChannelFutureListener() {
 						@Override
 						public void operationComplete(ChannelFuture future)  {
-							enableCompression(threshold);
+							ServerPlatform.get().getMiscUtils().enableCompression(networkManager.getChannel().pipeline(), threshold);
 						}
 					}
 				);
@@ -226,6 +222,14 @@ public abstract class AbstractLoginListener implements IHasProfile {
 
 	public enum LoginState {
 		HELLO, ONLINEMODERESOLVE, KEY, AUTHENTICATING;
+	}
+
+	protected static boolean isFullEncryption(ProtocolVersion version) {
+		return (version.getProtocolType() == ProtocolType.PC) && version.isAfterOrEq(ProtocolVersion.MINECRAFT_1_7_5);
+	}
+
+	protected static boolean hasCompression(ProtocolVersion version) {
+		return (version.getProtocolType() == ProtocolType.PC) && version.isAfterOrEq(ProtocolVersion.MINECRAFT_1_8);
 	}
 
 }

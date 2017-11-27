@@ -1,11 +1,10 @@
 package protocolsupport.protocol.packet.middle.clientbound.play;
 
 import io.netty.buffer.ByteBuf;
-import protocolsupport.api.ProtocolType;
-import protocolsupport.api.ProtocolVersion;
 import protocolsupport.api.tab.TabAPI;
 import protocolsupport.protocol.packet.middle.ClientBoundMiddlePacket;
 import protocolsupport.protocol.serializer.StringSerializer;
+import protocolsupport.protocol.utils.ProtocolVersionsHelper;
 import protocolsupport.protocol.utils.types.Difficulty;
 import protocolsupport.protocol.utils.types.Environment;
 import protocolsupport.protocol.utils.types.GameMode;
@@ -32,14 +31,15 @@ public abstract class MiddleLogin extends ClientBoundMiddlePacket {
 		difficulty = Difficulty.getById(serverdata.readByte());
 		serverdata.readByte();
 		maxplayers = TabAPI.getMaxTabSize();
-		leveltype = StringSerializer.readString(serverdata, ProtocolVersion.getLatest(ProtocolType.PC), 16);
+		leveltype = StringSerializer.readString(serverdata, ProtocolVersionsHelper.LATEST_PC, 16);
 		reducedDebugInfo = serverdata.readBoolean();
 	}
 
 	@Override
-	public void handle() {
+	public boolean postFromServerRead() {
 		cache.addWatchedSelfPlayer(NetworkEntity.createPlayer(playerEntityId));
 		cache.setDimensionId(dimension);
+		return true;
 	}
 
 }
